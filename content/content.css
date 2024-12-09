@@ -1,0 +1,307 @@
+.gpt-buttons-wrapper {
+  position: absolute;
+  display: none;
+  gap: 4px;
+  right: 0;
+  bottom: -30px;
+  background: white;
+  padding: 4px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1003;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+}
+
+.gpt-reformulate-button,
+.gpt-undo-button,
+.gpt-redo-button,
+.gpt-rollback-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.gpt-buttons-wrapper:has(button[style*="display: flex"] + button[style*="display: flex"]) 
+button[style*="display: flex"]:not(:last-of-type) {
+  border-right: 1px solid #e0e0e0;
+  padding-right: 4px;
+}
+
+/* Enlever la bordure du bouton redo quand il est le dernier visible */
+.gpt-redo-button[style*="display: flex"]:not(:has(+ button[style*="display: flex"])) {
+  border-right: none;
+  padding-right: 0;
+}
+
+.gpt-reformulate-button svg,
+.gpt-undo-button svg,
+.gpt-redo-button svg,
+.gpt-rollback-button svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.gpt-reformulate-button:hover,
+.gpt-undo-button:hover,
+.gpt-redo-button:hover,
+.gpt-rollback-button:hover {
+  color: #1a73e8;
+}
+
+.gpt-reformulate-button.loading {
+  pointer-events: none;
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.gpt-reformulate-button.loading svg {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.typing-effect {
+  overflow: hidden;
+  white-space: pre-wrap;
+  animation: typing 0.05s steps(1) infinite;
+}
+
+@keyframes typing {
+  50% {
+    border-color: transparent;
+  }
+}
+
+input:disabled,
+textarea:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Ajouter un effet de transition pour les boutons */
+.gpt-buttons-wrapper button {
+  transition: transform 0.1s ease;
+}
+
+.gpt-buttons-wrapper button:active {
+  transform: scale(0.9);
+}
+
+/* Effet de pulse pendant le chargement */
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.gpt-reformulate-button.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gpt-buttons-wrapper {
+    background: #2d2d2d;
+    border-color: #404040;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .gpt-reformulate-button,
+  .gpt-undo-button,
+  .gpt-redo-button,
+  .gpt-rollback-button {
+    color: #e0e0e0;
+  }
+
+  .gpt-buttons-wrapper button:hover {
+    color: #8ab4f8;
+  }
+}
+
+.gpt-config-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  padding: 12px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 1002;
+  margin-top: 4px;
+  border: 1px solid #e0e0e0;
+  min-width: 200px;
+}
+
+.gpt-config-menu.visible {
+  display: block;
+}
+
+.gpt-config-item {
+  margin-bottom: 8px;
+}
+
+.gpt-config-item:last-child {
+  margin-bottom: 0;
+}
+
+.gpt-config-item label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.gpt-config-item select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.gpt-style-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.gpt-style-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.gpt-style-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.gpt-style-button:hover {
+  background: #f5f5f5;
+  color: #1a73e8;
+}
+
+.gpt-style-button.active {
+  background: #e8f0fe;
+  color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gpt-style-button {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #e0e0e0;
+  }
+
+  .gpt-style-button:hover {
+    background: #353535;
+    color: #8ab4f8;
+  }
+
+  .gpt-style-button.active {
+    background: #174ea6;
+    color: #fff;
+    border-color: #8ab4f8;
+  }
+}
+
+.gpt-config-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.gpt-config-button svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.gpt-config-button:hover {
+  color: #1a73e8;
+}
+
+/* Ajouter un indicateur visuel quand le menu est ouvert */
+.gpt-config-button.active {
+  color: #1a73e8;
+  background: #e8f0fe;
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gpt-config-button {
+    color: #e0e0e0;
+  }
+  
+  .gpt-config-button:hover,
+  .gpt-config-button.active {
+    color: #8ab4f8;
+    background: #174ea6;
+  }
+}
+
+/* Ajuster la position quand le menu de config est visible */
+.gpt-config-menu.visible ~ .gpt-comparison {
+  margin-top: 160px;
+}
+
+.gpt-error-notification {
+  position: absolute;
+  bottom: -50px;
+  left: 0;
+  right: 0;
+  background: #fde7e9;
+  color: #b3261e;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid #f2b8bb;
+  z-index: 1001;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gpt-error-notification {
+    background: #410e0b;
+    color: #f2b8bb;
+    border-color: #8c1d18;
+  }
+}
+ 

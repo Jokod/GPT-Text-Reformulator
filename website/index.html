@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GPT Reformulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Test GPT Reformulator</h1>
+
+        <div class="examples-section">
+            <h2>Exemples de textes à reformuler</h2>
+            <div class="example-list">
+                <div class="example-item">
+                    <button class="copy-button" title="Copier le texte">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <p>Je suis très content de vous annoncer que j'ai réussi mon examen.</p>
+                </div>
+                <div class="example-item">
+                    <button class="copy-button" title="Copier le texte">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <p>Le projet a été terminé dans les délais et le client est satisfait.</p>
+                </div>
+                <div class="example-item">
+                    <button class="copy-button" title="Copier le texte">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <p>On doit se réunir demain pour parler des nouveaux changements.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Input Text Simple</h2>
+            <div class="input-group">
+                <label for="simple-input">Texte à reformuler :</label>
+                <input type="text" id="simple-input" placeholder="Entrez votre texte ici...">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Input Search</h2>
+            <div class="input-group">
+                <label for="search-input">Recherche à reformuler :</label>
+                <input type="search" id="search-input" placeholder="Tapez votre recherche...">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Input Sans Type</h2>
+            <div class="input-group">
+                <label for="no-type-input">Input sans type spécifié :</label>
+                <input id="no-type-input" placeholder="Texte à reformuler...">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Textarea</h2>
+            <div class="input-group">
+                <label for="textarea-test">Texte long à reformuler :</label>
+                <textarea id="textarea-test" rows="4" placeholder="Entrez un texte plus long ici..."></textarea>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Div Éditable</h2>
+            <div class="input-group">
+                <label>Contenu éditable :</label>
+                <div class="editable-div" contenteditable="true">
+                    Cliquez ici pour éditer ce texte et testez la reformulation...
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Formulaire avec plusieurs champs</h2>
+            <form>
+                <div class="input-group">
+                    <label for="title-input">Titre :</label>
+                    <input type="text" id="title-input" placeholder="Entrez un titre...">
+                </div>
+
+                <div class="input-group">
+                    <label for="description-textarea">Description :</label>
+                    <textarea id="description-textarea" rows="3" placeholder="Décrivez votre sujet..."></textarea>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.copy-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const text = button.nextElementSibling.textContent;
+                navigator.clipboard.writeText(text);
+                
+                // Feedback visuel
+                button.classList.add('copied');
+                setTimeout(() => button.classList.remove('copied'), 1000);
+            });
+        });
+    </script>
+</body>
+</html>
