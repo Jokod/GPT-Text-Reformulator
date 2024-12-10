@@ -12,11 +12,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const encryptedKey = await getEncryptedKey();
     if (encryptedKey) {
-      const apiKey = await chrome.runtime.sendMessage({ 
+      const apiKeyValue = await chrome.runtime.sendMessage({ 
         action: 'getDecryptedApiKey' 
       });
-      if (apiKey) {
-        apiKeyInput.value = apiKey;
+      if (apiKeyValue) {
+        // Afficher directement la valeur de la clé
+        apiKeyInput.value = apiKeyValue;
       }
     }
   } catch (error) {
@@ -28,10 +29,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const apiKey = apiKeyInput.value.trim();
     
     try {
-      // Validation avec la nouvelle classe ApiKeyValidator
+      // Validation avec la classe ApiKeyValidator
       await ApiKeyValidator.validate(apiKey);
 
-      // Chiffrement avec la nouvelle classe CryptoManager
+      // Chiffrement avec la classe CryptoManager
       const encrypted = await CryptoManager.encryptApiKey(apiKey);
       await saveEncryptedKey(encrypted);
       

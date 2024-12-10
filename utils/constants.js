@@ -15,7 +15,13 @@ export const ERRORS = {
     ENCRYPT_ERROR: () => "Erreur lors du chiffrement de la clé API"
   },
   RATE_LIMIT: () => "Limite de requêtes atteinte. Veuillez réessayer plus tard.",
-  REFORMULATION: () => "Erreur lors de la reformulation"
+  REFORMULATION: () => "Erreur lors de la reformulation",
+  SECURITY: {
+    DEV_MODE: () => "Mode développeur détecté",
+    BROWSER_INTEGRITY: () => "L'intégrité du navigateur est compromise",
+    DEVTOOLS: () => "Outils de développement détectés",
+    UNSAFE_CONTEXT: () => "Contexte d'exécution non sécurisé"
+  }
 };
 
 export const TEST_CASES = [
@@ -32,5 +38,18 @@ export const TEMPLATES = {
     casual: 'Reformule ce texte de manière plus décontractée',
     formal: 'Reformule ce texte de manière formelle et soutenue',
     custom: text => `Reformule ce texte: ${text}`
+  }
+};
+
+export const SECURITY = {
+  MAX_DECRYPT_ATTEMPTS: 3,
+  LOCKOUT_DURATION: 60000,
+  KEY_ROTATION_INTERVAL: 24 * 60 * 60 * 1000,
+  MEMORY_TIMEOUT: 30000,
+  MIN_ENTROPY: 128,
+  KEY_PATTERNS: {
+    VALID_CHARS: /^[a-zA-Z0-9-_]+$/,
+    MIN_ENTROPY: 128,
+    REQUIRED_PARTS: ['sk-', '-']
   }
 }; 
