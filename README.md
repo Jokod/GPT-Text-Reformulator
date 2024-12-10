@@ -13,7 +13,6 @@ A Chrome extension that helps reformulate text using ChatGPT API. It provides di
 - Three writing styles: Professional, Casual, and Formal
 - Text history with undo/redo functionality
 - Keyboard shortcuts
-- Dark mode support
 - Smooth typing animation
 
 ## Installation

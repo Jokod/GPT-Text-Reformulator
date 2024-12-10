@@ -5,6 +5,8 @@ VERSION_NAME = $(shell jq -r .version_name manifest.json)
 BUILD_DIR = build
 DIST_DIR = dist
 ZIP_NAME = $(NAME)-v$(VERSION).zip
+UGLIFYJS = npx uglify-js
+JS_FILES = $(shell find . -name "*.js" -not -path "./node_modules/*" -not -path "./$(BUILD_DIR)/*" -not -path "./$(DIST_DIR)/*")
 
 # Required files and directories
 REQUIRED_FILES = \
@@ -66,7 +68,12 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	@for file in $(REQUIRED_FILES); do \
 		mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
-		cp $$file $(BUILD_DIR)/$$file; \
+		if [ "$(VERSION_NAME)" != *"dev"* ] && [ "$${file%.js}" != "$$file" ]; then \
+			echo "Minifying $$file..."; \
+			$(UGLIFYJS) $$file -o $(BUILD_DIR)/$$file; \
+		else \
+			cp $$file $(BUILD_DIR)/$$file; \
+		fi \
 	done
 	@echo "✅ Build complete"
 
