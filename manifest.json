@@ -19,11 +19,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "content/content.js"
       ],
-      "css": ["content/content.css"],
+      "css": [
+        "content/content.css"
+      ],
       "type": "module"
     }
   ],
@@ -31,12 +35,16 @@
     "service_worker": "background/background.js",
     "type": "module"
   },
-  "web_accessible_resources": [{
-    "resources": [
-      "utils/*.js",
-      "content/*.js",
-      "icons/*.svg"
-    ],
-    "matches": ["<all_urls>"]
-  }]
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "utils/*.js",
+        "content/*.js",
+        "icons/*.svg"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

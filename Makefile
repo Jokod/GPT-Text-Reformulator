@@ -9,7 +9,6 @@ ZIP_NAME = $(NAME)-v$(VERSION).zip
 # Required files and directories
 REQUIRED_FILES = \
 	manifest.json \
-	schema.json \
 	background/background.js \
 	content/content.js \
 	content/content.css \
@@ -19,6 +18,11 @@ REQUIRED_FILES = \
 	utils/crypto.js \
 	utils/storage.js \
 	utils/openai.js \
+	utils/constants.js \
+	utils/errors.js \
+	utils/security.js \
+	utils/ui.js \
+	utils/validation.js \
 	icons/icon.png \
 	LICENSE \
 	README.md
@@ -77,48 +81,23 @@ package:
 version:
 	@echo "Current version: $(VERSION)"
 	@echo "Version name: $(VERSION_NAME)"
-	@if [[ "$(VERSION_NAME)" == *"-dev"* ]]; then \
+	@if [ -n "$(VERSION_NAME)" ] && [ "$$(echo $(VERSION_NAME) | grep -o 'dev')" = "dev" ]; then \
 		echo "Mode: Development"; \
 	else \
 		echo "Mode: Production"; \
 	fi
 
 dev-version:
-	@if [[ "$(VERSION_NAME)" != *"-dev"* ]]; then \
-		$(call update_version,$(VERSION),"$(VERSION)-dev"); \
-		echo "🔧 Switched to development mode"; \
-	else \
-		echo "Already in development mode"; \
-	fi
+	@chmod +x scripts/version.sh
+	@./scripts/version.sh dev "$(VERSION_NAME)" "$(VERSION)"
 
 prod-version:
-	@if [[ "$(VERSION_NAME)" == *"-dev"* ]]; then \
-		$(call update_version,$(VERSION),"$(VERSION)"); \
-		echo "🚀 Switched to production mode"; \
-	else \
-		echo "Already in production mode"; \
-	fi
+	@chmod +x scripts/version.sh
+	@./scripts/version.sh prod "$(VERSION_NAME)" "$(VERSION)"
 
 bump-version:
-	@echo "Current version: $(VERSION) ($(VERSION_NAME))"
-	@echo "Select version type:"
-	@echo "  1) Patch (x.x.X)"
-	@echo "  2) Minor (x.X.0)"
-	@echo "  3) Major (X.0.0)"
-	@echo "  4) Custom"
-	@read -p "Choice [1-4]: " choice; \
-	case $$choice in \
-		1) new_version=$$(echo "$(VERSION)" | awk -F. '{$$NF = $$NF + 1;} 1' | sed 's/ /./g');; \
-		2) new_version=$$(echo "$(VERSION)" | awk -F. '{$$2 = $$2 + 1; $$3 = 0;} 1' | sed 's/ /./g');; \
-		3) new_version=$$(echo "$(VERSION)" | awk -F. '{$$1 = $$1 + 1; $$2 = 0; $$3 = 0;} 1' | sed 's/ /./g');; \
-		4) read -p "Enter new version: " new_version;; \
-		*) echo "Invalid choice"; exit 1;; \
-	esac; \
-	if [[ "$(VERSION_NAME)" == *"-dev"* ]]; then \
-		$(call update_version,$$new_version,"$$new_version-dev"); \
-	else \
-		$(call update_version,$$new_version,"$$new_version"); \
-	fi
+	@chmod +x scripts/bump.sh
+	@./scripts/bump.sh "$(VERSION)" "$(VERSION_NAME)"
 
 # Development helpers
 dev: dev-version clean check build
