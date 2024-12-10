@@ -1,84 +1,137 @@
-export async function generateKey() {
-  return await crypto.subtle.generateKey(
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
-}
+import { CryptoError } from './errors.js';
+import { ERRORS } from './constants.js';
 
-export async function getExtensionKey() {
-  const extensionId = chrome.runtime.id;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(extensionId);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return new Uint8Array(hash);
-}
+export class CryptoManager {
+  static ALGORITHM = 'AES-GCM';
+  static KEY_LENGTH = 256;
+  static SALT_LENGTH = 16;
+  static IV_LENGTH = 12;
 
-export async function encryptApiKey(apiKey) {
-  const masterKey = await generateKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encodedApiKey = new TextEncoder().encode(apiKey);
+  static async generateEncryptionKey() {
+    return await crypto.subtle.generateKey(
+      {
+        name: this.ALGORITHM,
+        length: this.KEY_LENGTH
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
 
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    masterKey,
-    encodedApiKey
-  );
+  static async deriveKey(extensionId) {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.digest(
+      'SHA-256',
+      encoder.encode(extensionId)
+    );
 
-  const extensionKey = await getExtensionKey();
-  const doubleEncrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    await crypto.subtle.importKey(
-      "raw",
-      extensionKey,
-      { name: "AES-GCM", length: 256 },
+    return await crypto.subtle.importKey(
+      'raw',
+      keyMaterial,
+      { name: this.ALGORITHM },
       false,
-      ["encrypt"]
-    ),
-    new Uint8Array(encrypted)
-  );
-
-  const exportedKey = await crypto.subtle.exportKey("raw", masterKey);
-  
-  return {
-    encrypted: Array.from(new Uint8Array(doubleEncrypted)),
-    iv: Array.from(iv),
-    key: Array.from(new Uint8Array(exportedKey))
-  };
-}
-
-export async function decryptApiKey(encryptedData, iv) {
-  try {
-    const extensionKey = await getExtensionKey();
-    const firstDecryption = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: new Uint8Array(iv) },
-      await crypto.subtle.importKey(
-        "raw",
-        extensionKey,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["decrypt"]
-      ),
-      new Uint8Array(encryptedData.encrypted)
+      ['encrypt', 'decrypt']
     );
+  }
 
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new Uint8Array(encryptedData.key),
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["decrypt"]
-    );
+  static async encryptApiKey(apiKey) {
+    try {
+      const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
+      const salt = crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
+      const masterKey = await this.generateEncryptionKey();
+      const derivedKey = await this.deriveKey(chrome.runtime.id);
 
-    const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: new Uint8Array(iv) },
-      key,
-      firstDecryption
-    );
+      const encoder = new TextEncoder();
+      const encodedData = encoder.encode(apiKey);
+      const encryptedData = await crypto.subtle.encrypt(
+        {
+          name: this.ALGORITHM,
+          iv: iv
+        },
+        masterKey,
+        encodedData
+      );
 
-    return new TextDecoder().decode(decrypted);
-  } catch (error) {
-    console.error('Erreur lors du déchiffrement:', error);
-    throw new Error('Impossible de récupérer la clé API. Veuillez la reconfigurer.');
+      const doubleEncrypted = await crypto.subtle.encrypt(
+        {
+          name: this.ALGORITHM,
+          iv: iv
+        },
+        derivedKey,
+        new Uint8Array(encryptedData)
+      );
+
+      const exportedKey = await crypto.subtle.exportKey('raw', masterKey);
+
+      return {
+        encrypted: Array.from(new Uint8Array(doubleEncrypted)),
+        iv: Array.from(iv),
+        salt: Array.from(salt),
+        key: Array.from(new Uint8Array(exportedKey))
+      };
+    } catch (error) {
+      console.error('Encryption error:', error);
+      throw new CryptoError(ERRORS.API_KEY.ENCRYPT_ERROR());
+    }
+  }
+
+  static async decryptApiKey(encryptedBundle) {
+    try {
+      const {
+        encrypted,
+        iv,
+        key,
+        salt
+      } = encryptedBundle;
+
+      const derivedKey = await this.deriveKey(chrome.runtime.id);
+      const masterKey = await crypto.subtle.importKey(
+        'raw',
+        new Uint8Array(key),
+        {
+          name: this.ALGORITHM,
+          length: this.KEY_LENGTH
+        },
+        true,
+        ['decrypt']
+      );
+
+      const firstDecryption = await crypto.subtle.decrypt(
+        {
+          name: this.ALGORITHM,
+          iv: new Uint8Array(iv)
+        },
+        derivedKey,
+        new Uint8Array(encrypted)
+      );
+
+      const finalDecryption = await crypto.subtle.decrypt(
+        {
+          name: this.ALGORITHM,
+          iv: new Uint8Array(iv)
+        },
+        masterKey,
+        firstDecryption
+      );
+
+      return new TextDecoder().decode(finalDecryption);
+    } catch (error) {
+      console.error('Decryption error:', error);
+      throw new CryptoError(ERRORS.API_KEY.DECRYPT_ERROR());
+    }
+  }
+
+  static async generateChecksum(data) {
+    const encoder = new TextEncoder();
+    const buffer = encoder.encode(JSON.stringify(data));
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  static async verifyChecksum(data, checksum) {
+    const calculatedChecksum = await this.generateChecksum(data);
+    return calculatedChecksum === checksum;
   }
 } 

@@ -1,11 +1,23 @@
-const inputHistories = new WeakMap();
+const moduleURL = chrome.runtime.getURL('utils/constants.js');
 
-const reformulationTemplates = {
-  professional: 'Reformule ce texte de manière professionnelle',
-  casual: 'Reformule ce texte de manière plus décontractée',
-  formal: 'Reformule ce texte de manière formelle et soutenue',
-  custom: text => `Reformule ce texte: ${text}`
-};
+let TEMPLATES, ERRORS;
+let reformulationTemplates;
+
+(async () => {
+  try {
+    const module = await import(moduleURL);
+    TEMPLATES = module.TEMPLATES;
+    ERRORS = module.ERRORS;
+    
+    reformulationTemplates = TEMPLATES.reformulation;
+    
+    initializeInputs();
+  } catch (error) {
+    console.error('Erreur lors du chargement des modules:', error);
+  }
+})();
+
+const inputHistories = new WeakMap();
 
 class TextHistory {
   constructor(initialText) {
@@ -26,6 +38,27 @@ class TextHistory {
 
   undo() { return this.canUndo() ? this.history[--this.currentIndex] : null; }
   redo() { return this.canRedo() ? this.history[++this.currentIndex] : null; }
+}
+
+async function typeText(input, text) {
+  const baseDelay = 15;
+  const minDelay = 2;
+  const speedFactor = Math.max(1, Math.floor(text.length / 100));
+  const getTypingDelay = () => Math.max(minDelay, (baseDelay - speedFactor) + (Math.random() * 5));
+
+  input.value = '';
+  const chunks = text.split(/([.,!?])/);
+  
+  for (const chunk of chunks) {
+    if (!chunk) continue;
+    for (const char of chunk) {
+      input.value += char;
+      await new Promise(resolve => setTimeout(resolve, getTypingDelay()));
+    }
+    if (/[.,!?]/.test(chunk)) {
+      await new Promise(resolve => setTimeout(resolve, Math.max(20, 100 - speedFactor * 5)));
+    }
+  }
 }
 
 async function reformulateText(input) {
@@ -122,20 +155,6 @@ async function reformulateText(input) {
       buttons.rollback.style.display = history.currentIndex > 0 ? 'flex' : 'none';
       configButton.style.display = 'flex';
     }
-  }
-}
-
-async function typeText(input, text) {
-  input.value = '';
-  const chunks = text.split(/([.,!?])/);
-  
-  for (const chunk of chunks) {
-    if (!chunk) continue;
-    for (const char of chunk) {
-      input.value += char;
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 10 + 5));
-    }
-    if (/[.,!?]/.test(chunk)) await new Promise(resolve => setTimeout(resolve, 100));
   }
 }
 

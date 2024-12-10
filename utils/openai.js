@@ -28,4 +28,4 @@ export async function reformulateText(apiKey, text, template) {
     throw new Error(data.error?.message || 'Erreur lors de la reformulation');
   }
   return data.choices[0].message.content;
-} 
+}

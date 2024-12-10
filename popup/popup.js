@@ -1,3 +1,7 @@
+import { CryptoManager } from '../utils/crypto.js';
+import { ApiKeyValidator } from '../utils/validation.js';
+import { ERRORS } from '../utils/constants.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKeyInput = document.getElementById('apiKey');
   const togglePasswordButton = document.getElementById('togglePassword');
@@ -24,29 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const apiKey = apiKeyInput.value.trim();
     
     try {
-      // Validation du format
-      if (!apiKey) {
-        throw new Error(window.ERRORS.API_KEY.EMPTY());
-      }
-      if (!apiKey.startsWith('sk-')) {
-        throw new Error(window.ERRORS.API_KEY.INVALID_FORMAT());
-      }
-      if (apiKey.length < window.API.MIN_KEY_LENGTH) {
-        throw new Error(window.ERRORS.API_KEY.TOO_SHORT());
-      }
+      // Validation avec la nouvelle classe ApiKeyValidator
+      await ApiKeyValidator.validate(apiKey);
 
-      // Test de la clé API
-      const isValid = await validateApiKey(apiKey);
-      if (!isValid) {
-        throw new Error(window.ERRORS.API_KEY.INVALID());
-      }
-
-      // Chiffrement et sauvegarde
-      const encrypted = await chrome.runtime.sendMessage({
-        action: 'encryptApiKey',
-        apiKey
-      });
-      
+      // Chiffrement avec la nouvelle classe CryptoManager
+      const encrypted = await CryptoManager.encryptApiKey(apiKey);
       await saveEncryptedKey(encrypted);
       
       showStatus("Clé API sauvegardée avec succès", 'success', formGroup);
@@ -63,19 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
 });
-
-async function validateApiKey(apiKey) {
-  try {
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      }
-    });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
-}
 
 async function saveEncryptedKey(encryptedKey) {
   return chrome.storage.local.set({ encryptedApiKey: encryptedKey });

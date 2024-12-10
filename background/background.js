@@ -1,4 +1,4 @@
-import { encryptApiKey, decryptApiKey } from '../utils/crypto.js';
+import { CryptoManager } from '../utils/crypto.js';
 import { saveEncryptedKey, getEncryptedKey } from '../utils/storage.js';
 import { reformulateText } from '../utils/openai.js';
 
@@ -22,7 +22,7 @@ async function handleReformulation(text, template) {
   if (!encryptedKey) throw new Error('Clé API non configurée');
 
   try {
-    const apiKey = await decryptApiKey(encryptedKey, encryptedKey.iv);
+    const apiKey = await CryptoManager.decryptApiKey(encryptedKey);
     return await reformulateText(apiKey, text, template);
   } catch (error) {
     if (error.message.includes('rate limit')) {
@@ -34,7 +34,7 @@ async function handleReformulation(text, template) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'encryptApiKey') {
-    encryptApiKey(request.apiKey)
+    CryptoManager.encryptApiKey(request.apiKey)
       .then(async encrypted => {
         await saveEncryptedKey(encrypted);
         sendResponse(encrypted);
@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           return;
         }
         try {
-          const apiKey = await decryptApiKey(encryptedKey, encryptedKey.iv);
+          const apiKey = await CryptoManager.decryptApiKey(encryptedKey);
           sendResponse(apiKey);
         } catch (error) {
           console.error('Erreur de déchiffrement:', error);

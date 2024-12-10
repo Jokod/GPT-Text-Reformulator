@@ -20,10 +20,10 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "utils/constants.js",
         "content/content.js"
       ],
-      "css": ["content/content.css"]
+      "css": ["content/content.css"],
+      "type": "module"
     }
   ],
   "background": {
