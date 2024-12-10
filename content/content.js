@@ -69,10 +69,24 @@ async function reformulateText(input) {
       await typeText(input, newText);
       input.dispatchEvent(new Event('input', { bubbles: true }));
     } else {
+      const existingNotification = document.querySelector('.gpt-error-notification');
+      if (existingNotification) existingNotification.remove();
+
+      const notification = document.createElement('div');
+      notification.className = 'gpt-error-notification';
+      notification.textContent = response.error || 'Erreur lors de la reformulation';
+      wrapper.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.transition = 'opacity 0.5s ease';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
+      
       input.value = inputHistories.get(input).getOriginalText();
     }
   } catch (error) {
-    const existingNotification = wrapper.querySelector('.gpt-error-notification');
+    const existingNotification = document.querySelector('.gpt-error-notification');
     if (existingNotification) existingNotification.remove();
 
     const notification = document.createElement('div');
@@ -91,7 +105,7 @@ async function reformulateText(input) {
     input.disabled = false;
     reformulateButton.disabled = false;
     reformulateButton.classList.remove('loading');
-    
+
     const history = inputHistories.get(input);
     if (history) {
       const buttons = {
@@ -99,10 +113,10 @@ async function reformulateText(input) {
         redo: wrapper.querySelector('.gpt-redo-button'),
         rollback: wrapper.querySelector('.gpt-rollback-button')
       };
-      
+  
       Object.values(buttons).forEach(btn => btn.disabled = false);
       configButton.disabled = false;
-      
+
       buttons.undo.style.display = history.canUndo() ? 'flex' : 'none';
       buttons.redo.style.display = history.canRedo() ? 'flex' : 'none';
       buttons.rollback.style.display = history.currentIndex > 0 ? 'flex' : 'none';
@@ -171,7 +185,7 @@ function addReformulateButton(input) {
       <div class="gpt-style-buttons">
         <button class="gpt-style-button" data-style="professional" title="Style professionnel">
           <svg viewBox="0 0 24 24" fill="none">
-            <path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8-2h4v2h-4V4zM5 18V9h14v9H5z" fill="currentColor"/>
+            <path d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM17.99 9l-1.41-1.42-6.59 6.59-2.58-2.57-1.42 1.41 4 3.99z" fill="currentColor"/>
           </svg>
           Pro
         </button>
@@ -217,7 +231,6 @@ function addReformulateButton(input) {
     configButton.classList.toggle('active');
   });
 
-  // Modifier la gestion du clic en dehors
   document.addEventListener('click', (e) => {
     const isConfigButton = e.target.closest('.gpt-config-button');
     const isConfigMenu = e.target.closest('.gpt-config-menu');

@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "encryptedApiKey": {
+      "type": "object",
+      "description": "La clé API chiffrée",
+      "properties": {
+        "encrypted": {
+          "type": "array",
+          "description": "Données chiffrées",
+          "items": {
+            "type": "number"
+          }
+        },
+        "iv": {
+          "type": "array",
+          "description": "Vecteur d'initialisation",
+          "items": {
+            "type": "number"
+          }
+        },
+        "key": {
+          "type": "array",
+          "description": "Clé de chiffrement",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": ["encrypted", "iv", "key"]
+    }
+  }
+} 

@@ -1,40 +1,77 @@
+import { encryptApiKey, decryptApiKey } from '../utils/crypto.js';
+import { saveEncryptedKey, getEncryptedKey } from '../utils/storage.js';
+import { reformulateText } from '../utils/openai.js';
+
+const TEST_MODE = false;
+
+async function handleReformulation(text, template) {
+  if (TEST_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const testCases = [
+      { success: false, error: 'Clé API non configurée' },
+      { success: false, error: 'Erreur lors de la reformulation' },
+      { success: false, error: 'Impossible de récupérer la clé API. Veuillez la reconfigurer.' },
+      { success: false, error: 'Limite de requêtes atteinte. Veuillez réessayer plus tard.' },
+      { success: true, reformulatedText: 'Ceci est un texte reformulé de test.' }
+    ];
+    
+    return testCases[Math.floor(Math.random() * testCases.length)];
+  }
+
+  const encryptedKey = await getEncryptedKey();
+  if (!encryptedKey) throw new Error('Clé API non configurée');
+
+  try {
+    const apiKey = await decryptApiKey(encryptedKey, encryptedKey.iv);
+    return await reformulateText(apiKey, text, template);
+  } catch (error) {
+    if (error.message.includes('rate limit')) {
+      throw new Error('Limite de requêtes atteinte. Veuillez réessayer plus tard.');
+    }
+    throw error;
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'encryptApiKey') {
+    encryptApiKey(request.apiKey)
+      .then(async encrypted => {
+        await saveEncryptedKey(encrypted);
+        sendResponse(encrypted);
+      });
+    return true;
+  }
+  
+  if (request.action === 'getDecryptedApiKey') {
+    getEncryptedKey()
+      .then(async encryptedKey => {
+        if (!encryptedKey) {
+          sendResponse(null);
+          return;
+        }
+        try {
+          const apiKey = await decryptApiKey(encryptedKey, encryptedKey.iv);
+          sendResponse(apiKey);
+        } catch (error) {
+          console.error('Erreur de déchiffrement:', error);
+          sendResponse(null);
+        }
+      });
+    return true;
+  }
+  
   if (request.action === 'reformulateText') {
-    reformulateWithGPT(request.text, request.template)
-      .then(result => setTimeout(() => sendResponse({ 
-        success: true, 
-        reformulatedText: result 
-      }), 500))
+    handleReformulation(request.text, request.template)
+      .then(result => setTimeout(() => sendResponse(
+        TEST_MODE ? result : { 
+          success: true, 
+          reformulatedText: result 
+        }
+      ), 500))
       .catch(error => sendResponse({ 
         success: false, 
         error: error.message 
       }));
     return true;
   }
-});
-
-async function reformulateWithGPT(text, template) {
-  const { apiKey } = await chrome.storage.sync.get(['apiKey']);
-  if (!apiKey) throw new Error('Clé API non configurée');
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [{
-        role: "user",
-        content: `${template}: ${text}`
-      }]
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error?.message || 'Erreur lors de la reformulation');
-  }
-  return data.choices[0].message.content;
-} 
+}); 

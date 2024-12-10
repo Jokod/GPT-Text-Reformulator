@@ -141,14 +141,13 @@ textarea:disabled {
   top: 100%;
   right: 0;
   background: white;
-  padding: 12px;
+  padding: 4px;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: none;
   z-index: 1002;
   margin-top: 4px;
   border: 1px solid #e0e0e0;
-  min-width: 200px;
 }
 
 .gpt-config-menu.visible {
@@ -180,27 +179,28 @@ textarea:disabled {
 
 .gpt-style-buttons {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .gpt-style-button {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  background: white;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: none;
   color: #666;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .gpt-style-button svg {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 .gpt-style-button:hover {
@@ -211,13 +211,16 @@ textarea:disabled {
 .gpt-style-button.active {
   background: #e8f0fe;
   color: #1a73e8;
-  border-color: #1a73e8;
 }
 
 @media (prefers-color-scheme: dark) {
-  .gpt-style-button {
+  .gpt-config-menu {
     background: #2d2d2d;
     border-color: #404040;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .gpt-style-button {
     color: #e0e0e0;
   }
 
@@ -229,7 +232,6 @@ textarea:disabled {
   .gpt-style-button.active {
     background: #174ea6;
     color: #fff;
-    border-color: #8ab4f8;
   }
 }
 
@@ -285,9 +287,10 @@ textarea:disabled {
 
 .gpt-error-notification {
   position: absolute;
-  bottom: -50px;
-  left: 0;
-  right: 0;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-block;
   background: #fde7e9;
   color: #b3261e;
   padding: 8px 12px;
@@ -295,12 +298,32 @@ textarea:disabled {
   font-size: 12px;
   border: 1px solid #f2b8bb;
   z-index: 1001;
+  min-width: max-content;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gpt-error-notification::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: #fde7e9;
+  border-left: 1px solid #f2b8bb;
+  border-top: 1px solid #f2b8bb;
 }
 
 @media (prefers-color-scheme: dark) {
   .gpt-error-notification {
     background: #410e0b;
     color: #f2b8bb;
+    border-color: #8c1d18;
+  }
+  
+  .gpt-error-notification::before {
+    background: #410e0b;
     border-color: #8c1d18;
   }
 }

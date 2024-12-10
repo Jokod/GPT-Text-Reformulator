@@ -8,12 +8,16 @@ ZIP_NAME = $(NAME)-v$(VERSION).zip
 # Required files and directories
 REQUIRED_FILES = \
 	manifest.json \
+	schema.json \
 	background/background.js \
 	content/content.js \
 	content/content.css \
 	popup/popup.html \
 	popup/popup.js \
 	popup/popup.css \
+	utils/crypto.js \
+	utils/storage.js \
+	utils/openai.js \
 	icons/icon.png \
 	LICENSE \
 	README.md
@@ -36,11 +40,21 @@ check:
 		fi \
 	done
 	@echo "✅ All required files present"
+	@echo "🔍 Checking module imports..."
+	@if grep -r "import.*from" . | grep -v "node_modules" | grep -v "build" | grep -v "dist" > /dev/null; then \
+		echo "✅ Module imports found and valid"; \
+	else \
+		echo "❌ No module imports found or invalid syntax"; \
+		exit 1; \
+	fi
 
 build:
 	@echo "🏗️  Building extension v$(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
-	@cp -r $(REQUIRED_FILES) $(BUILD_DIR)/
+	@for file in $(REQUIRED_FILES); do \
+		mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
+		cp $$file $(BUILD_DIR)/$$file; \
+	done
 	@echo "✅ Build complete"
 
 package:
@@ -67,8 +81,13 @@ help:
 	@echo "Available commands:"
 	@echo "  make          - Clean, check, build and package the extension"
 	@echo "  make clean    - Remove build and dist directories"
-	@echo "  make check    - Verify all required files are present"
+	@echo "  make check    - Verify all required files and module imports"
 	@echo "  make build    - Build the extension"
 	@echo "  make package  - Create distribution ZIP file"
 	@echo "  make version  - Show current version"
-	@echo "  make bump-version - Update extension version" 
+	@echo "  make bump-version - Update extension version"
+
+# Development helpers
+dev: clean check build
+	@echo "🔄 Development build complete"
+	@echo "📁 Files ready in $(BUILD_DIR)/" 
