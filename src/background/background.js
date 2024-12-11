@@ -1,6 +1,6 @@
-import { CryptoManager } from '../utils/crypto.js';
-import { saveEncryptedKey, getEncryptedKey } from '../utils/storage.js';
-import { reformulateText } from '../utils/openai.js';
+import { CryptoManager } from '../services/crypto.js';
+import { saveEncryptedKey, getEncryptedKey } from '../services/storage.js';
+import { reformulateText } from '../services/api/openai.js';
 
 const TEST_MODE = false;
 
@@ -204,4 +204,4 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     command: info.menuItemId,
     targetElementId: info.targetElementId
   });
-}); 
+});

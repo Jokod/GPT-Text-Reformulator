@@ -1,6 +1,5 @@
-import { CryptoManager } from '../utils/crypto.js';
-import { ApiKeyValidator } from '../utils/validation.js';
-import { ERRORS } from '../utils/constants.js';
+import { CryptoManager } from '../../services/crypto.js';
+import { ApiKeyValidator } from '../../utils/validation.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKeyInput = document.getElementById('apiKey');

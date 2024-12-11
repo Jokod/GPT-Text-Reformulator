@@ -11,21 +11,21 @@ JS_FILES = $(shell find . -name "*.js" -not -path "./node_modules/*" -not -path 
 # Required files and directories
 REQUIRED_FILES = \
 	manifest.json \
-	background/background.js \
-	content/content.js \
-	content/content.css \
-	popup/popup.html \
-	popup/popup.js \
-	popup/popup.css \
-	utils/crypto.js \
+	src/background/background.js \
+	src/content/content.js \
+	src/content/content.css \
+	src/ui/popup/popup.html \
+	src/ui/popup/popup.js \
+	src/ui/popup/popup.css \
+	src/utils/crypto.js \
 	utils/storage.js \
-	utils/openai.js \
-	utils/constants.js \
-	utils/errors.js \
-	utils/security.js \
-	utils/ui.js \
-	utils/validation.js \
-	icons/icon.png \
+	src/utils/openai.js \
+	src/utils/constants.js \
+	src/utils/errors.js \
+	src/utils/security.js \
+	src/utils/ui.js \
+	src/utils/validation.js \
+	src/assets/icons/icon.png \
 	LICENSE \
 	README.md
 

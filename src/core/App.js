@@ -29,7 +29,7 @@ export class App {
   }
 
   async loadModules() {
-    const moduleLoaderURL = chrome.runtime.getURL('content/moduleLoader.js');
+    const moduleLoaderURL = chrome.runtime.getURL('src/core/moduleLoader.js');
     const { loadModules } = await import(moduleLoaderURL);
     const { constants, classes } = await loadModules();
 

@@ -1,5 +1,5 @@
-import { CryptoError } from './errors.js';
-import { ERRORS } from './constants.js';
+import { CryptoError } from '../utils/errors.js';
+import { ERRORS } from '../utils/constants.js';
 import { SecurityChecker } from './security.js';
 
 export class CryptoManager {

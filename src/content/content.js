@@ -1,4 +1,5 @@
-const appURL = chrome.runtime.getURL('content/App.js');
+const appURL = chrome.runtime.getURL('src/core/App.js');
+
 let app = null;
 
 async function initializeApp() {

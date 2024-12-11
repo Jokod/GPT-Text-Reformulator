@@ -1,9 +1,9 @@
 const moduleURLs = {
-  constants: chrome.runtime.getURL('utils/constants.js'),
-  textHistory: chrome.runtime.getURL('content/TextHistory.js'),
-  typeWriter: chrome.runtime.getURL('content/TypeWriter.js'),
-  uiManager: chrome.runtime.getURL('content/UIManager.js'),
-  reformulator: chrome.runtime.getURL('content/Reformulator.js'),
+  constants: chrome.runtime.getURL('src/utils/constants.js'),
+  textHistory: chrome.runtime.getURL('src/core/TextHistory.js'),
+  typeWriter: chrome.runtime.getURL('src/core/TypeWriter.js'),
+  uiManager: chrome.runtime.getURL('src/ui/UIManager.js'),
+  reformulator: chrome.runtime.getURL('src/core/Reformulator.js'),
 };
 
 export async function loadModules() {
@@ -36,7 +36,7 @@ export async function loadModules() {
       }
     };
   } catch (error) {
-    console.error('Erreur lors du chargement des modules:', error);
+    console.error(`Erreur lors du chargement du module ${modulePath}:`, error);
     throw error;
   }
 } 
