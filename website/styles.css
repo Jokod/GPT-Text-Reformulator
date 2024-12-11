@@ -239,3 +239,22 @@ textarea {
         border-radius: 0;
     }
 } 
+
+/* Styles pour TinyMCE */
+.tox-tinymce {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 4px !important;
+    transition: border-color 0.2s ease;
+}
+
+.tox-tinymce:focus-within {
+    border-color: #1a73e8 !important;
+}
+
+.tox .tox-toolbar__group {
+    padding: 0 4px !important;
+}
+
+.tox .tox-edit-area__iframe {
+    background-color: white !important;
+} 
