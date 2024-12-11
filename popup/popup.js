@@ -7,32 +7,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   const togglePasswordButton = document.getElementById('togglePassword');
   const saveButton = document.getElementById('saveButton');
   const formGroup = document.querySelector('.form-group');
+  const showOnFocusCheckbox = document.getElementById('showOnFocus');
 
-  // Charger la clé API existante
+  // Charger la clé API existante et les paramètres
   try {
-    const encryptedKey = await getEncryptedKey();
+    const [encryptedKey, { showOnFocus }] = await Promise.all([
+      getEncryptedKey(),
+      chrome.storage.local.get('showOnFocus')
+    ]);
+
     if (encryptedKey) {
       const apiKeyValue = await chrome.runtime.sendMessage({ 
         action: 'getDecryptedApiKey' 
       });
       if (apiKeyValue) {
-        // Afficher directement la valeur de la clé
         apiKeyInput.value = apiKeyValue;
       }
     }
+
+    showOnFocusCheckbox.checked = showOnFocus !== false;
   } catch (error) {
-    console.error('Erreur lors du chargement de la clé API:', error);
+    console.error('Erreur lors du chargement des paramètres:', error);
   }
+
+  // Gestionnaire pour la checkbox
+  showOnFocusCheckbox.addEventListener('change', async () => {
+    try {
+      await chrome.storage.local.set({ showOnFocus: showOnFocusCheckbox.checked });
+      
+      // Notifier tous les onglets du changement
+      const tabs = await chrome.tabs.query({});
+      await Promise.all(tabs.map(tab => 
+        chrome.tabs.sendMessage(tab.id, {
+          action: 'updateShowOnFocus',
+          value: showOnFocusCheckbox.checked
+        }).catch(() => {/* Ignorer les erreurs pour les onglets qui n'ont pas le content script */})
+      ));
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du paramètre:', error);
+    }
+  });
 
   // Gestionnaire de sauvegarde
   saveButton.addEventListener('click', async () => {
     const apiKey = apiKeyInput.value.trim();
     
     try {
-      // Validation avec la classe ApiKeyValidator
       await ApiKeyValidator.validate(apiKey);
-
-      // Chiffrement avec la classe CryptoManager
       const encrypted = await CryptoManager.encryptApiKey(apiKey);
       await saveEncryptedKey(encrypted);
       
@@ -48,7 +69,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   togglePasswordButton.addEventListener('click', () => {
     togglePasswordVisibility(apiKeyInput, togglePasswordButton);
   });
-
 });
 
 async function saveEncryptedKey(encryptedKey) {

@@ -9,13 +9,19 @@ export class App {
     this.Reformulator = null;
     this.reformulator = null;
     this.inputHistories = new WeakMap();
+    this.showOnFocus = true;
   }
 
   async initialize() {
     try {
       await this.loadModules();
-      this.initializeInputs();
-      this.observeDOM();
+      const { showOnFocus } = await chrome.storage.local.get('showOnFocus');
+      this.showOnFocus = showOnFocus !== false;
+      
+      if (this.showOnFocus) {
+        this.initializeInputs();
+        this.observeDOM();
+      }
     } catch (error) {
       console.error('Erreur lors de l\'initialisation:', error);
       throw error;
@@ -82,5 +88,27 @@ export class App {
 
   hasHistory(input) {
     return this.inputHistories.has(input);
+  }
+
+  handleFocus(event) {
+    if (this.showOnFocus) {
+      this.UIManager.addReformulateButton(event.target, this);
+    }
+  }
+
+  updateShowOnFocus(value) {
+    this.showOnFocus = value;
+
+    if (this.showOnFocus) {
+      document.querySelectorAll(`
+        input[type="text"],
+        input[type="search"],
+        input:not([type]),
+        textarea,
+        [contenteditable="true"]
+      `).forEach(input => this.UIManager.addReformulateButton(input, this));
+    } else {
+      document.querySelectorAll('.gpt-buttons-wrapper').forEach(wrapper => wrapper.remove());
+    }
   }
 } 

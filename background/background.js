@@ -58,15 +58,21 @@ async function rotateEncryption() {
 setInterval(rotateEncryption, 24 * 60 * 60 * 1000);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'encryptApiKey') {
-    CryptoManager.encryptApiKey(request.apiKey)
-      .then(async encrypted => {
-        await saveEncryptedKey(encrypted);
-        sendResponse(encrypted);
-      });
+  if (request.action === 'reformulateText') {
+    handleReformulation(request.text, request.template)
+      .then(result => setTimeout(() => sendResponse(
+        TEST_MODE ? result : { 
+          success: true, 
+          reformulatedText: result 
+        }
+      ), 500))
+      .catch(error => sendResponse({ 
+        success: false, 
+        error: error.message 
+      }));
     return true;
   }
-  
+
   if (request.action === 'getDecryptedApiKey') {
     getEncryptedKey()
       .then(async encryptedKey => {
@@ -86,75 +92,116 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     return true;
   }
-  
-  if (request.action === 'reformulateText') {
-    handleReformulation(request.text, request.template)
-      .then(result => setTimeout(() => sendResponse(
-        TEST_MODE ? result : { 
-          success: true, 
-          reformulatedText: result 
-        }
-      ), 500))
-      .catch(error => sendResponse({ 
-        success: false, 
-        error: error.message 
-      }));
+
+  if (request.action === 'encryptApiKey') {
+    CryptoManager.encryptApiKey(request.apiKey)
+      .then(async encrypted => {
+        await saveEncryptedKey(encrypted);
+        sendResponse(encrypted);
+      });
     return true;
-  }
-}); 
-
-// Vérifier l'intégrité du code de l'extension
-chrome.runtime.onInstalled.addListener(async () => {
-  try {
-    // Créer une empreinte de l'extension basée sur son ID et sa version
-    const manifest = chrome.runtime.getManifest();
-    const extensionFingerprint = await CryptoManager.generateChecksum({
-      id: chrome.runtime.id,
-      version: manifest.version,
-      name: manifest.name
-    });
-    
-    // Stocker l'empreinte pour les vérifications futures
-    await chrome.storage.local.set({ 
-      extensionIntegrity: {
-        fingerprint: extensionFingerprint,
-        timestamp: Date.now(),
-        version: manifest.version
-      }
-    });
-
-    // Vérifier si c'est une mise à jour
-    const previousVersion = await chrome.storage.local.get('lastVersion');
-    if (previousVersion.lastVersion !== manifest.version) {
-      // Mettre à jour la version stockée
-      await chrome.storage.local.set({ lastVersion: manifest.version });
-    }
-  } catch (error) {
-    console.error('Erreur lors de la vérification d\'intégrité:', error);
   }
 });
 
-// Ajouter une fonction pour vérifier l'intégrité
-async function checkExtensionIntegrity() {
-  try {
-    const { extensionIntegrity } = await chrome.storage.local.get('extensionIntegrity');
-    if (!extensionIntegrity) return false;
+// Créer les éléments du menu contextuel
+chrome.runtime.onInstalled.addListener(() => {
+  // Menu parent
+  chrome.contextMenus.create({
+    id: 'gptReformulator',
+    title: 'GPT Reformulator',
+    contexts: ['editable']
+  });
 
-    // Vérifier si la version correspond
-    const manifest = chrome.runtime.getManifest();
-    if (extensionIntegrity.version !== manifest.version) return false;
+  // Sous-menus
+  chrome.contextMenus.create({
+    id: 'reformulate',
+    parentId: 'gptReformulator',
+    title: 'Reformuler',
+    contexts: ['editable']
+  });
 
-    // Recalculer l'empreinte
-    const currentFingerprint = await CryptoManager.generateChecksum({
-      id: chrome.runtime.id,
-      version: manifest.version,
-      name: manifest.name
+  chrome.contextMenus.create({
+    id: 'undo',
+    parentId: 'gptReformulator',
+    title: 'Version précédente',
+    contexts: ['editable']
+  });
+
+  chrome.contextMenus.create({
+    id: 'redo',
+    parentId: 'gptReformulator',
+    title: 'Version suivante',
+    contexts: ['editable']
+  });
+
+  chrome.contextMenus.create({
+    id: 'rollback',
+    parentId: 'gptReformulator',
+    title: 'Revenir au texte original',
+    contexts: ['editable']
+  });
+
+  chrome.contextMenus.create({
+    id: 'config',
+    parentId: 'gptReformulator',
+    title: 'Configurer',
+    contexts: ['editable']
+  });
+
+  // Fonction pour créer les menus de style
+  async function createStyleMenus() {
+    const { 'gpt-reformulation-style': currentStyle } = await chrome.storage.local.get('gpt-reformulation-style');
+    
+    const styles = [
+      { id: 'professional', title: 'Professionnel' },
+      { id: 'casual', title: 'Casual' },
+      { id: 'formal', title: 'Formel' }
+    ];
+
+    styles.forEach(style => {
+      chrome.contextMenus.create({
+        id: style.id,
+        parentId: 'config',
+        title: `${(currentStyle || 'professional') === style.id ? '✓ ' : ''}${style.title}`,
+        contexts: ['editable']
+      });
     });
-
-    // Comparer avec l'empreinte stockée
-    return currentFingerprint === extensionIntegrity.fingerprint;
-  } catch (error) {
-    console.error('Erreur lors de la vérification d\'intégrité:', error);
-    return false;
   }
-} 
+
+  createStyleMenus();
+});
+
+// Mettre à jour les menus quand le style change
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'local' && changes['gpt-reformulation-style']) {
+    // Recréer les menus de style
+    chrome.contextMenus.remove('professional');
+    chrome.contextMenus.remove('casual');
+    chrome.contextMenus.remove('formal');
+    
+    const styles = [
+      { id: 'professional', title: 'Professionnel' },
+      { id: 'casual', title: 'Casual' },
+      { id: 'formal', title: 'Formel' }
+    ];
+
+    const currentStyle = changes['gpt-reformulation-style'].newValue;
+    styles.forEach(style => {
+      chrome.contextMenus.create({
+        id: style.id,
+        parentId: 'config',
+        title: `${style.id === currentStyle ? '✓ ' : ''}${style.title}`,
+        contexts: ['editable']
+      });
+    });
+  }
+});
+
+// Gestionnaire de clic sur le menu contextuel
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  chrome.tabs.sendMessage(tab.id, {
+    action: 'contextMenuAction',
+    command: info.menuItemId,
+    targetElementId: info.targetElementId
+  });
+}); 

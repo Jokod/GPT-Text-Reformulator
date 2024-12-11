@@ -73,6 +73,8 @@ export class UIManager {
     if (!history) return;
 
     const wrapper = input.nextElementSibling;
+    if (!wrapper?.classList.contains('gpt-buttons-wrapper')) return;
+
     const undoButton = wrapper.querySelector('.gpt-undo-button');
     const redoButton = wrapper.querySelector('.gpt-redo-button');
     const rollbackButton = wrapper.querySelector('.gpt-rollback-button');
@@ -88,7 +90,7 @@ export class UIManager {
     
     // Gestionnaire pour le bouton de reformulation
     reformulate.addEventListener('click', () => {
-      app.reformulator.reformulateText(input, app.inputHistories);
+      app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus);
     });
 
     // Gestionnaire pour les boutons d'historique
@@ -104,15 +106,28 @@ export class UIManager {
 
     // Gestionnaire pour les boutons de style
     const styleButtons = configMenu.querySelectorAll('.gpt-style-button');
-    styleButtons.forEach(button => {
-      if (button.dataset.style === (localStorage.getItem('gpt-reformulation-style') || 'professional')) {
-        button.classList.add('active');
+    
+    // Fonction pour mettre à jour l'état actif des boutons de style
+    const updateStyleButtons = async () => {
+      const { 'gpt-reformulation-style': currentStyle } = await chrome.storage.local.get('gpt-reformulation-style');
+      styleButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.style === (currentStyle || 'professional'));
+      });
+    };
+
+    // Écouter les changements de style
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'local' && changes['gpt-reformulation-style']) {
+        updateStyleButtons();
       }
-      
+    });
+
+    // Initialiser l'état des boutons
+    updateStyleButtons();
+
+    styleButtons.forEach(button => {
       button.addEventListener('click', () => {
-        styleButtons.forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        localStorage.setItem('gpt-reformulation-style', button.dataset.style);
+        this.setStyle(button.dataset.style);
       });
     });
 
@@ -135,7 +150,7 @@ export class UIManager {
         switch (e.key) {
           case 'r': 
             e.preventDefault();
-            app.reformulator.reformulateText(input, app.inputHistories);
+            app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus);
             break;
           case 'z':
             e.preventDefault();
@@ -183,7 +198,22 @@ export class UIManager {
     if (newText !== null) {
       input.value = newText;
       input.dispatchEvent(new Event('input', { bubbles: true }));
-      this.updateHistoryButtons(input, app.inputHistories);
+      if (app.showOnFocus) {
+        this.updateHistoryButtons(input, app.inputHistories);
+      }
+    }
+  }
+
+  static async setStyle(style) {
+    // Sauvegarder le style
+    await chrome.storage.local.set({ 'gpt-reformulation-style': style });
+
+    // Mettre à jour les boutons de style
+    if (this.showOnFocus) {
+    const styleButtons = document.querySelectorAll('.gpt-style-button');
+    styleButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.style === style);
+      });
     }
   }
 } 

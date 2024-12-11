@@ -6,7 +6,8 @@
   "description": "Reformule le texte avec ChatGPT",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "contextMenus"
   ],
   "action": {
     "default_popup": "popup/popup.html",

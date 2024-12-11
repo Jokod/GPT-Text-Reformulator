@@ -11,34 +11,21 @@ export class Reformulator {
     this.TextHistory = TextHistory;
   }
 
-  async reformulateText(input, inputHistories) {
-    const wrapper = input.nextElementSibling;
-    const reformulateButton = wrapper.querySelector('.gpt-reformulate-button');
-    const configButton = wrapper.querySelector('.gpt-config-button');
-    const configMenu = wrapper.querySelector('.gpt-config-menu');
-    
+  async reformulateText(input, inputHistories, showOnFocus) {
     if (!input.value.trim()) return;
     if (!inputHistories.has(input)) {
       inputHistories.set(input, new this.TextHistory(input.value));
     }
 
+    const wrapper = input.nextElementSibling;
+    if (showOnFocus) {
+      this.disableUI(wrapper);
+    }
+
     input.disabled = true;
-    
-    wrapper.querySelectorAll('.gpt-undo-button, .gpt-redo-button, .gpt-rollback-button').forEach(btn => {
-      btn.style.display = 'none';
-      btn.disabled = true;
-    });
 
-    reformulateButton.disabled = true;
-    configMenu.classList.remove('visible');
-    configButton.classList.remove('active');
-    configButton.style.display = 'none';
-    configButton.disabled = true;
-
-    reformulateButton.classList.add('loading');
-
-    const style = localStorage.getItem('gpt-reformulation-style') || 'professional';
-    const template = this.templates[style];
+    const { 'gpt-reformulation-style': style } = await chrome.storage.local.get('gpt-reformulation-style');
+    const template = this.templates[style || 'professional'];
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -54,35 +41,43 @@ export class Reformulator {
         await this.typeWriter.typeText(input, newText);
         input.dispatchEvent(new Event('input', { bubbles: true }));
       } else {
-        this.showError(wrapper, response.error || 'Erreur lors de la reformulation');
+        this.showError(showOnFocus ? wrapper : input.parentElement, response.error || 'Erreur lors de la reformulation');
         input.value = inputHistories.get(input).getOriginalText();
       }
     } catch (error) {
-      this.showError(wrapper, 'Erreur lors de la reformulation');
+      this.showError(showOnFocus ? wrapper : input.parentElement, 'Erreur lors de la reformulation');
       input.value = inputHistories.get(input).getOriginalText();
     } finally {
-      this.resetUI(input, wrapper, reformulateButton, configButton, inputHistories);
+      input.disabled = false;
+      if (showOnFocus) {
+        this.enableUI(input, wrapper, inputHistories);
+      }
     }
   }
 
-  showError(wrapper, message) {
-    const existingNotification = document.querySelector('.gpt-error-notification');
-    if (existingNotification) existingNotification.remove();
+  disableUI(wrapper) {
+    const reformulateButton = wrapper.querySelector('.gpt-reformulate-button');
+    const configButton = wrapper.querySelector('.gpt-config-button');
+    const configMenu = wrapper.querySelector('.gpt-config-menu');
 
-    const notification = document.createElement('div');
-    notification.className = 'gpt-error-notification';
-    notification.textContent = message;
-    wrapper.appendChild(notification);
+    wrapper.querySelectorAll('.gpt-undo-button, .gpt-redo-button, .gpt-rollback-button').forEach(btn => {
+      btn.style.display = 'none';
+      btn.disabled = true;
+    });
 
-    setTimeout(() => {
-      notification.style.transition = 'opacity 0.5s ease';
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 500);
-    }, 3000);
+    reformulateButton.disabled = true;
+    configMenu.classList.remove('visible');
+    configButton.classList.remove('active');
+    configButton.style.display = 'none';
+    configButton.disabled = true;
+
+    reformulateButton.classList.add('loading');
   }
 
-  resetUI(input, wrapper, reformulateButton, configButton, inputHistories) {
-    input.disabled = false;
+  enableUI(input, wrapper, inputHistories) {
+    const reformulateButton = wrapper.querySelector('.gpt-reformulate-button');
+    const configButton = wrapper.querySelector('.gpt-config-button');
+
     reformulateButton.disabled = false;
     reformulateButton.classList.remove('loading');
 
@@ -93,7 +88,7 @@ export class Reformulator {
         redo: wrapper.querySelector('.gpt-redo-button'),
         rollback: wrapper.querySelector('.gpt-rollback-button')
       };
-  
+
       Object.values(buttons).forEach(btn => btn.disabled = false);
       configButton.disabled = false;
 
@@ -102,5 +97,21 @@ export class Reformulator {
       buttons.rollback.style.display = history.currentIndex > 0 ? 'flex' : 'none';
       configButton.style.display = 'flex';
     }
+  }
+
+  showError(container, message) {
+    const existingNotification = document.querySelector('.gpt-error-notification');
+    if (existingNotification) existingNotification.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'gpt-error-notification';
+    notification.textContent = message;
+    container.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.transition = 'opacity 0.5s ease';
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 500);
+    }, 3000);
   }
 }
