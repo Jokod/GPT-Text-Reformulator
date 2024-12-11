@@ -88,96 +88,99 @@ export class UIManager {
     const { undo, redo, reformulate, rollback, config } = buttons;
     const buttonsWrapper = configMenu.parentElement;
     
-    // Gestionnaire pour le bouton de reformulation
-    reformulate.addEventListener('click', () => {
-      app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus);
-    });
-
-    // Gestionnaire pour les boutons d'historique
-    undo.addEventListener('click', () => this.handleHistoryNavigation(input, 'undo', app));
-    redo.addEventListener('click', () => this.handleHistoryNavigation(input, 'redo', app));
-    rollback.addEventListener('click', () => this.handleHistoryNavigation(input, 'rollback', app));
-
-    // Gestionnaire pour le bouton de configuration
-    config.addEventListener('click', () => {
-      configMenu.classList.toggle('visible');
-      config.classList.toggle('active');
-    });
-
-    // Gestionnaire pour les boutons de style
-    const styleButtons = configMenu.querySelectorAll('.gpt-style-button');
-    
-    // Fonction pour mettre à jour l'état actif des boutons de style
-    const updateStyleButtons = async () => {
-      const { 'gpt-reformulation-style': currentStyle } = await chrome.storage.local.get('gpt-reformulation-style');
-      styleButtons.forEach(button => {
-        button.classList.toggle('active', button.dataset.style === (currentStyle || 'professional'));
-      });
+    const handleError = (error) => {
+        if (error.message.includes('Extension context invalidated')) {
+            window.location.reload();
+            return;
+        }
+        console.error('Erreur:', error);
     };
 
-    // Écouter les changements de style
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'local' && changes['gpt-reformulation-style']) {
-        updateStyleButtons();
-      }
+    const wrapAction = (action) => async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            await action();
+        } catch (error) {
+            handleError(error);
+        }
+    };
+
+    // Configuration des boutons principaux
+    const buttonActions = {
+        reformulate: () => app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus),
+        undo: () => this.handleHistoryNavigation(input, 'undo', app),
+        redo: () => this.handleHistoryNavigation(input, 'redo', app),
+        rollback: () => this.handleHistoryNavigation(input, 'rollback', app),
+        config: () => {
+            configMenu.classList.toggle('visible');
+            config.classList.toggle('active');
+        }
+    };
+
+    // Attacher les événements aux boutons principaux
+    Object.entries(buttonActions).forEach(([key, action]) => {
+        buttons[key].addEventListener('click', wrapAction(action));
     });
 
-    // Initialiser l'état des boutons
+    // Configuration des boutons de style
+    const styleButtons = configMenu.querySelectorAll('.gpt-style-button');
+    styleButtons.forEach(button => {
+        button.addEventListener('click', wrapAction(async () => {
+            await this.setStyle(button.dataset.style);
+        }));
+    });
+
+    // Gestion des styles
+    const updateStyleButtons = async () => {
+        const { 'gpt-reformulation-style': currentStyle } = await chrome.storage.local.get('gpt-reformulation-style');
+        styleButtons.forEach(button => {
+            button.classList.toggle('active', button.dataset.style === (currentStyle || 'professional'));
+        });
+    };
+
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes['gpt-reformulation-style']) {
+            updateStyleButtons();
+        }
+    });
+
     updateStyleButtons();
 
-    styleButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        this.setStyle(button.dataset.style);
-      });
-    });
-
-    // Gestionnaire pour le focus de l'input
+    // Gestion du focus et du blur
     input.addEventListener('focus', () => {
-      buttonsWrapper.style.display = 'flex';
-      this.updateHistoryButtons(input, app.inputHistories);
+        buttonsWrapper.style.display = 'flex';
+        this.updateHistoryButtons(input, app.inputHistories);
     });
 
-    // Gestionnaire pour la perte de focus
     input.addEventListener('blur', (e) => {
-      if (!e.relatedTarget?.closest('.gpt-buttons-wrapper')) {
-        buttonsWrapper.style.display = 'none';
-      }
-    });
-
-    // Gestionnaire pour les raccourcis clavier
-    input.addEventListener('keydown', (e) => {
-      if (e.altKey) {
-        switch (e.key) {
-          case 'r': 
-            e.preventDefault();
-            app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus);
-            break;
-          case 'z':
-            e.preventDefault();
-            this.handleHistoryNavigation(input, 'undo', app);
-            break;
-          case 'y':
-            e.preventDefault();
-            this.handleHistoryNavigation(input, 'redo', app);
-            break;
-          case 'o':
-            e.preventDefault();
-            this.handleHistoryNavigation(input, 'rollback', app);
-            break;
+        if (!e.relatedTarget?.closest('.gpt-buttons-wrapper')) {
+            buttonsWrapper.style.display = 'none';
         }
-      }
     });
 
-    // Fermeture du menu de configuration au clic en dehors
-    document.addEventListener('click', (e) => {
-      const isConfigButton = e.target.closest('.gpt-config-button');
-      const isConfigMenu = e.target.closest('.gpt-config-menu');
-      const isStyleButton = e.target.closest('.gpt-style-button');
+    // Raccourcis clavier
+    const keyboardShortcuts = {
+        'r': () => app.reformulator.reformulateText(input, app.inputHistories, app.showOnFocus),
+        'z': () => this.handleHistoryNavigation(input, 'undo', app),
+        'y': () => this.handleHistoryNavigation(input, 'redo', app),
+        'o': () => this.handleHistoryNavigation(input, 'rollback', app)
+    };
 
-      if (!isConfigButton && !isConfigMenu && !isStyleButton) {
-        configMenu.classList.remove('visible');
-        config.classList.remove('active');
-      }
+    input.addEventListener('keydown', (e) => {
+        if (e.altKey && keyboardShortcuts[e.key]) {
+            e.preventDefault();
+            wrapAction(keyboardShortcuts[e.key])();
+        }
+    });
+
+    // Fermeture du menu de configuration
+    document.addEventListener('click', (e) => {
+        const isConfigRelated = e.target.closest('.gpt-config-button, .gpt-config-menu, .gpt-style-button');
+        if (!isConfigRelated) {
+            configMenu.classList.remove('visible');
+            config.classList.remove('active');
+        }
     });
   }
 
@@ -205,10 +208,8 @@ export class UIManager {
   }
 
   static async setStyle(style) {
-    // Sauvegarder le style
     await chrome.storage.local.set({ 'gpt-reformulation-style': style });
 
-    // Mettre à jour les boutons de style
     if (this.showOnFocus) {
     const styleButtons = document.querySelectorAll('.gpt-style-button');
     styleButtons.forEach(button => {
