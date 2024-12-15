@@ -75,7 +75,7 @@ button[style*="display: flex"]:not(:last-of-type) {
     transform: rotate(0deg);
   }
   to {
-    transform: rotate(360deg);
+    transform: rotate(-360deg);
   }
 }
 
@@ -136,155 +136,6 @@ textarea:disabled {
   }
 }
 
-.gpt-config-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: white;
-  padding: 4px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: none;
-  z-index: 1002;
-  margin-top: 4px;
-  border: 1px solid #e0e0e0;
-}
-
-.gpt-config-menu.visible {
-  display: block;
-}
-
-.gpt-config-item {
-  margin-bottom: 8px;
-}
-
-.gpt-config-item:last-child {
-  margin-bottom: 0;
-}
-
-.gpt-config-item label {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: #666;
-}
-
-.gpt-config-item select {
-  width: 100%;
-  padding: 6px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.gpt-style-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.gpt-style-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  background: none;
-  color: #666;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.gpt-style-button svg {
-  width: 16px;
-  height: 16px;
-}
-
-.gpt-style-button:hover {
-  background: #f5f5f5;
-  color: #1a73e8;
-}
-
-.gpt-style-button.active {
-  background: #e8f0fe;
-  color: #1a73e8;
-}
-
-@media (prefers-color-scheme: dark) {
-  .gpt-config-menu {
-    background: #2d2d2d;
-    border-color: #404040;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .gpt-style-button {
-    color: #e0e0e0;
-  }
-
-  .gpt-style-button:hover {
-    background: #353535;
-    color: #8ab4f8;
-  }
-
-  .gpt-style-button.active {
-    background: #174ea6;
-    color: #fff;
-  }
-}
-
-.gpt-config-button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  transition: all 0.2s ease;
-}
-
-.gpt-config-button svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-  flex-shrink: 0;
-}
-
-.gpt-config-button:hover {
-  color: #1a73e8;
-}
-
-/* Ajouter un indicateur visuel quand le menu est ouvert */
-.gpt-config-button.active {
-  color: #1a73e8;
-  background: #e8f0fe;
-  border-radius: 4px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .gpt-config-button {
-    color: #e0e0e0;
-  }
-  
-  .gpt-config-button:hover,
-  .gpt-config-button.active {
-    color: #8ab4f8;
-    background: #174ea6;
-  }
-}
-
-/* Ajuster la position quand le menu de config est visible */
-.gpt-config-menu.visible ~ .gpt-comparison {
-  margin-top: 160px;
-}
-
 .gpt-error-notification {
   position: absolute;
   top: calc(100% + 8px);
@@ -326,5 +177,84 @@ textarea:disabled {
     background: #410e0b;
     border-color: #8c1d18;
   }
+}
+
+/* Styles spécifiques pour TinyMCE */
+.gpt-buttons-wrapper.tinymce-buttons {
+  z-index: 10000 !important;
+}
+
+.tox-tinymce {
+  position: relative;
+}
+
+.gpt-warning-notification {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 15px);
+    transform: translateY(-50%);
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.gpt-warning-notification::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -6px;
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    border-top: 1px solid #ffeeba;
+    border-right: 1px solid #ffeeba;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+@media (prefers-color-scheme: dark) {
+    .gpt-warning-notification {
+        background: #2c2517;
+        color: #ffd970;
+        border-color: #665e42;
+    }
+
+    .gpt-warning-notification::after {
+        background: #2c2517;
+        border-color: #665e42;
+    }
+}
+
+.gpt-reformulate-button.loading.cancellable {
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.gpt-reformulate-button.loading.cancellable:hover {
+    opacity: 1;
+    color: #dc3545;  /* Rouge pour indiquer l'annulation */
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+    .gpt-reformulate-button.loading.cancellable:hover {
+        color: #ff4d4d;
+    }
+}
+
+.gpt-editor-disabled {
+  background-color: #f5f5f5 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+  user-select: none !important;
+  pointer-events: none !important;
 }
  

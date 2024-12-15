@@ -1,54 +1,81 @@
 const appURL = chrome.runtime.getURL('src/core/App.js');
 
-let app = null;
-
-async function initializeApp() {
-  try {
-    const { App } = await import(appURL);
-    app = new App();
-    await app.initialize();
-  } catch (error) {
-    console.error('Failed to initialize app:', error);
-  }
-}
-
-// Écouter les messages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (!app && request.action !== 'ping') return;
-
-  if (request.action === 'ping') {
-    sendResponse({ status: 'ok' });
-    return;
+class ContentScript {
+  constructor() {
+    this.app = null;
   }
 
-  if (request.action === 'updateShowOnFocus') {
-    app.updateShowOnFocus(request.value);
+  async initialize() {
+    try {
+      const { App } = await import(appURL);
+      this.app = new App();
+      await this.app.initialize();
+      this.setupMessageListeners();
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+    }
   }
-  
-  // Gérer les actions du menu contextuel de manière asynchrone
-  if (request.action === 'contextMenuAction') {
-    (async () => {
-      const activeElement = document.activeElement;
-      if (!activeElement) return;
 
+  setupMessageListeners() {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (!this.app && request.action !== 'ping') return;
+
+      const handlers = {
+        ping: () => {
+          sendResponse({ status: 'ok' });
+          return true;
+        },
+        updateShowOnFocus: () => {
+          this.app.updateShowOnFocus(request.value);
+          return false;
+        },
+        contextMenuAction: async () => {
+          await this.handleContextMenuAction(request);
+          return false;
+        },
+        updateStyle: () => {
+          this.app.updateStyle(request.style);
+          return false;
+        }
+      };
+
+      const handler = handlers[request.action];
+      if (handler) {
+        return handler();
+      }
+      return false;
+    });
+  }
+
+  async handleContextMenuAction(request) {
+    const activeElement = document.activeElement;
+    if (!activeElement) return;
+
+    try {
       switch (request.command) {
         case 'reformulate':
-          await app.reformulator.reformulateText(activeElement, app.inputHistories, app.showOnFocus);
+          await this.handleReformulation(activeElement);
           break;
         case 'undo':
         case 'redo':
         case 'rollback':
-          app.UIManager.handleHistoryNavigation(activeElement, request.command, app);
-          break;
-        case 'professional':
-        case 'casual':
-        case 'formal':
-          await app.UIManager.setStyle(request.command);
-          await app.reformulator.reformulateText(activeElement, app.inputHistories, app.showOnFocus);
+          await this.app.handleHistoryAction(request.command, activeElement);
           break;
       }
-    })().catch(console.error);
+    } catch (error) {
+      console.error('Error handling context menu action:', error);
+    }
   }
-});
 
-initializeApp(); 
+  async handleReformulation(element) {
+    await this.app.reformulator.reformulateText(
+      element, 
+      this.app.inputHistories, 
+      this.app.showOnFocus
+    );
+  }
+}
+
+// Initialiser le script de contenu
+const contentScript = new ContentScript();
+contentScript.initialize(); 

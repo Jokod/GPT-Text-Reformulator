@@ -5,7 +5,7 @@ export function showStatus(message, type, parentElement) {
     status.id = 'status';
     parentElement.insertAdjacentElement('afterend', status);
   }
-  status.className = `status ${type}`;
+  status.className = `status-message ${type}`;
   status.textContent = typeof message === 'function' ? message() : message;
   return status;
 }

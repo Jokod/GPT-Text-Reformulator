@@ -1,45 +1,64 @@
+import { API, ERRORS } from '../../utils/constants.js';
+
 export async function validateApiKey(apiKey) {
-  const response = await fetch('https://api.openai.com/v1/models', {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`
-    }
-  });
-  return response.ok;
+  try {
+    const response = await fetch(`${API.OPENAI.BASE_URL}/models`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('API Key validation error:', error);
+    return false;
+  }
 }
 
-export async function reformulateText(secureApiKey, text, template) {
+export async function reformulateText(apiKey, text, template) {
   try {
-    const apiKey = secureApiKey.getValue();
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    if (!apiKey || typeof apiKey !== 'string') {
+      console.error('Invalid API key type:', typeof apiKey);
+      throw new Error(ERRORS.API_KEY.INVALID());
+    }
+
+    const response = await fetch(`${API.OPENAI.BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{
-          role: "user",
-          content: `${template}: ${text}`
-        }]
+        model: API.OPENAI.MODEL,
+        messages: [
+          { role: 'system', content: template.system },
+          { role: 'user', content: template.prompt + text }
+        ],
+        max_tokens: API.OPENAI.MAX_TOKENS,
+        temperature: API.OPENAI.TEMPERATURE
       })
     });
 
-    // On détruit seulement l'instance SecureApiKey en mémoire
-    secureApiKey.destroy();
-
-    const data = await response.json();
     if (!response.ok) {
-      // En cas d'erreur API, on ne veut pas perdre la clé
-      if (data.error?.type === 'invalid_api_key') {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('OpenAI API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+
+      if (response.status === 401) {
         throw new Error(ERRORS.API_KEY.INVALID());
       }
-      throw new Error(data.error?.message || 'Erreur lors de la reformulation');
+      if (response.status === 429) {
+        throw new Error(ERRORS.RATE_LIMIT());
+      }
+      throw new Error(errorData.error?.message || ERRORS.UNKNOWN());
     }
-    return data.choices[0].message.content;
+
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
   } catch (error) {
-    // On détruit toujours l'instance en mémoire, mais pas la clé enregistrée
-    secureApiKey.destroy();
+    console.error('OpenAI API error:', error);
     throw error;
   }
 }

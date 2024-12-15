@@ -1,13 +1,13 @@
-export async function saveEncryptedKey(encrypted) {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ encryptedApiKey: encrypted }, resolve);
+import { STORAGE_KEYS } from '../utils/constants.js';
+
+export async function saveEncryptedKey(encryptedKey) {
+  return chrome.storage.local.set({ 
+    [STORAGE_KEYS.API_KEY]: encryptedKey 
   });
 }
 
 export async function getEncryptedKey() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['encryptedApiKey'], (result) => {
-      resolve(result.encryptedApiKey);
-    });
-  });
+  const { [STORAGE_KEYS.API_KEY]: encryptedKey } = 
+    await chrome.storage.local.get(STORAGE_KEYS.API_KEY);
+  return encryptedKey;
 }

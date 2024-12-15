@@ -1,207 +1,137 @@
 import { CryptoManager } from '../services/crypto.js';
 import { saveEncryptedKey, getEncryptedKey } from '../services/storage.js';
 import { reformulateText } from '../services/api/openai.js';
+import { ERRORS, SECURITY } from '../utils/constants.js';
 
-const TEST_MODE = false;
+const MENU_IDS = {
+  PARENT: 'gptReformulator',
+  REFORMULATE: 'reformulate',
+  UNDO: 'undo',
+  REDO: 'redo',
+  ROLLBACK: 'rollback'
+};
+
+const MENU_ITEMS = [
+  { id: MENU_IDS.REFORMULATE, title: 'Reformuler' },
+  { id: MENU_IDS.UNDO, title: 'Version précédente' },
+  { id: MENU_IDS.REDO, title: 'Version suivante' },
+  { id: MENU_IDS.ROLLBACK, title: 'Revenir au texte original' }
+];
 
 async function handleReformulation(text, template) {
-  if (TEST_MODE) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const testCases = [
-      { success: false, error: 'Clé API non configurée' },
-      { success: false, error: 'Erreur lors de la reformulation' },
-      { success: false, error: 'Impossible de récupérer la clé API. Veuillez la reconfigurer.' },
-      { success: false, error: 'Limite de requêtes atteinte. Veuillez réessayer plus tard.' },
-      { success: true, reformulatedText: 'Ceci est un texte reformulé de test.' }
-    ];
-    
-    return testCases[Math.floor(Math.random() * testCases.length)];
+  const encryptedKey = await getEncryptedKey();
+  if (!encryptedKey) {
+    throw new Error(ERRORS.API_KEY.NOT_CONFIGURED());
   }
 
-  const encryptedKey = await getEncryptedKey();
-  if (!encryptedKey) throw new Error('Clé API non configurée');
-
   try {
-    const secureApiKey = await CryptoManager.decryptApiKey(encryptedKey);
-    const result = await reformulateText(secureApiKey, text, template);
-    return result;
+    const decryptedKey = await CryptoManager.decryptApiKey(encryptedKey);
+    const apiKey = decryptedKey.getValue();
+    const result = await reformulateText(apiKey, text, template);
+    return { success: true, reformulatedText: result };
   } catch (error) {
-    if (error.message === ERRORS.API_KEY.INVALID()) {
-      await chrome.storage.local.remove('encryptedApiKey');
-    }
-    if (error.message.includes('rate limit')) {
-      throw new Error('Limite de requêtes atteinte. Veuillez réessayer plus tard.');
-    }
+    handleReformulationError(error);
     throw error;
   }
 }
 
-// Ajouter une fonction de rotation du chiffrement
+function handleReformulationError(error) {
+  if (error.message.includes('401')) {
+    chrome.storage.local.remove(STORAGE_KEYS.API_KEY);
+    throw new Error(ERRORS.API_KEY.INVALID());
+  }
+  if (error.message.includes('429')) {
+    throw new Error(ERRORS.RATE_LIMIT());
+  }
+  throw error;
+}
+
 async function rotateEncryption() {
+  let secureApiKey;
   try {
     const encryptedKey = await getEncryptedKey();
-    if (encryptedKey) {
-      const secureApiKey = await CryptoManager.decryptApiKey(encryptedKey);
-      const apiKey = secureApiKey.getValue();
-      secureApiKey.destroy();
-      
-      // Re-chiffrer avec de nouvelles clés
-      const newEncrypted = await CryptoManager.encryptApiKey(apiKey);
-      await saveEncryptedKey(newEncrypted);
-    }
+    if (!encryptedKey) return;
+
+    secureApiKey = await CryptoManager.decryptApiKey(encryptedKey);
+    const apiKey = secureApiKey.getValue();
+    
+    const newEncrypted = await CryptoManager.encryptApiKey(apiKey);
+    await saveEncryptedKey(newEncrypted);
   } catch (error) {
-    console.error('Erreur lors de la rotation du chiffrement:', error);
+    console.error(ERRORS.API_KEY.ENCRYPT_ERROR(), error);
+  } finally {
+    secureApiKey?.destroy();
   }
 }
 
-// Effectuer la rotation toutes les 24 heures
-setInterval(rotateEncryption, 24 * 60 * 60 * 1000);
+const messageHandlers = {
+  async reformulateText(request) {
+    const result = await handleReformulation(request.text, request.template);
+    return result;
+  },
+
+  async getDecryptedApiKey() {
+    const encryptedKey = await getEncryptedKey();
+    if (!encryptedKey) return null;
+
+    let secureApiKey;
+    try {
+      secureApiKey = await CryptoManager.decryptApiKey(encryptedKey);
+      const apiKey = secureApiKey.getValue();
+      return apiKey;
+    } catch (error) {
+      console.error('Erreur de déchiffrement:', error);
+      return null;
+    } finally {
+      secureApiKey?.destroy();
+    }
+  },
+
+  async encryptApiKey(request) {
+    const encrypted = await CryptoManager.encryptApiKey(request.apiKey);
+    await saveEncryptedKey(encrypted);
+    return { success: true };
+  }
+};
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'reformulateText') {
-    handleReformulation(request.text, request.template)
-      .then(result => setTimeout(() => sendResponse(
-        TEST_MODE ? result : { 
-          success: true, 
-          reformulatedText: result 
-        }
-      ), 500))
-      .catch(error => sendResponse({ 
-        success: false, 
-        error: error.message 
-      }));
-    return true;
-  }
+  const handler = messageHandlers[request.action];
+  if (!handler) return false;
 
-  if (request.action === 'getDecryptedApiKey') {
-    getEncryptedKey()
-      .then(async encryptedKey => {
-        if (!encryptedKey) {
-          sendResponse(null);
-          return;
-        }
-        try {
-          const secureApiKey = await CryptoManager.decryptApiKey(encryptedKey);
-          const apiKeyValue = secureApiKey.getValue();
-          secureApiKey.destroy();
-          sendResponse(apiKeyValue);
-        } catch (error) {
-          console.error('Erreur de déchiffrement:', error);
-          sendResponse(null);
-        }
-      });
-    return true;
-  }
-
-  if (request.action === 'encryptApiKey') {
-    CryptoManager.encryptApiKey(request.apiKey)
-      .then(async encrypted => {
-        await saveEncryptedKey(encrypted);
-        sendResponse(encrypted);
-      });
-    return true;
-  }
+  handler(request)
+    .then(result => setTimeout(() => sendResponse(result), 500))
+    .catch(error => sendResponse({ 
+      success: false, 
+      error: error.message 
+    }));
+  return true;
 });
 
-// Créer les éléments du menu contextuel
-chrome.runtime.onInstalled.addListener(() => {
-  // Menu parent
+function setupContextMenus() {
   chrome.contextMenus.create({
-    id: 'gptReformulator',
+    id: MENU_IDS.PARENT,
     title: 'GPT Reformulator',
     contexts: ['editable']
   });
 
-  // Sous-menus
-  chrome.contextMenus.create({
-    id: 'reformulate',
-    parentId: 'gptReformulator',
-    title: 'Reformuler',
-    contexts: ['editable']
-  });
-
-  chrome.contextMenus.create({
-    id: 'undo',
-    parentId: 'gptReformulator',
-    title: 'Version précédente',
-    contexts: ['editable']
-  });
-
-  chrome.contextMenus.create({
-    id: 'redo',
-    parentId: 'gptReformulator',
-    title: 'Version suivante',
-    contexts: ['editable']
-  });
-
-  chrome.contextMenus.create({
-    id: 'rollback',
-    parentId: 'gptReformulator',
-    title: 'Revenir au texte original',
-    contexts: ['editable']
-  });
-
-  chrome.contextMenus.create({
-    id: 'config',
-    parentId: 'gptReformulator',
-    title: 'Configurer',
-    contexts: ['editable']
-  });
-
-  // Fonction pour créer les menus de style
-  async function createStyleMenus() {
-    const { 'gpt-reformulation-style': currentStyle } = await chrome.storage.local.get('gpt-reformulation-style');
-    
-    const styles = [
-      { id: 'professional', title: 'Professionnel' },
-      { id: 'casual', title: 'Casual' },
-      { id: 'formal', title: 'Formel' }
-    ];
-
-    styles.forEach(style => {
-      chrome.contextMenus.create({
-        id: style.id,
-        parentId: 'config',
-        title: `${(currentStyle || 'professional') === style.id ? '✓ ' : ''}${style.title}`,
-        contexts: ['editable']
-      });
+  MENU_ITEMS.forEach(item => {
+    chrome.contextMenus.create({
+      ...item,
+      parentId: MENU_IDS.PARENT,
+      contexts: ['editable']
     });
-  }
+  });
+}
 
-  createStyleMenus();
-});
-
-// Mettre à jour les menus quand le style change
-chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'local' && changes['gpt-reformulation-style']) {
-    // Recréer les menus de style
-    chrome.contextMenus.remove('professional');
-    chrome.contextMenus.remove('casual');
-    chrome.contextMenus.remove('formal');
-    
-    const styles = [
-      { id: 'professional', title: 'Professionnel' },
-      { id: 'casual', title: 'Casual' },
-      { id: 'formal', title: 'Formel' }
-    ];
-
-    const currentStyle = changes['gpt-reformulation-style'].newValue;
-    styles.forEach(style => {
-      chrome.contextMenus.create({
-        id: style.id,
-        parentId: 'config',
-        title: `${style.id === currentStyle ? '✓ ' : ''}${style.title}`,
-        contexts: ['editable']
-      });
-    });
-  }
-});
-
-// Gestionnaire de clic sur le menu contextuel
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+function handleContextMenuClick(info, tab) {
   chrome.tabs.sendMessage(tab.id, {
     action: 'contextMenuAction',
     command: info.menuItemId,
     targetElementId: info.targetElementId
   });
-});
+}
+
+chrome.runtime.onInstalled.addListener(setupContextMenus);
+chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
+
+setInterval(rotateEncryption, SECURITY.KEY_ROTATION_INTERVAL);

@@ -1,5 +1,5 @@
 import { CryptoError } from '../utils/errors.js';
-import { ERRORS } from '../utils/constants.js';
+import { ERRORS, SECURITY } from '../utils/constants.js';
 import { SecurityChecker } from './security.js';
 
 export class CryptoManager {
@@ -34,11 +34,11 @@ export class CryptoManager {
     }
   }
 
-  static async generateEncryptionKey() {
+  static async generateKey() {
     return await crypto.subtle.generateKey(
       {
-        name: this.ALGORITHM,
-        length: this.KEY_LENGTH
+        name: SECURITY.ENCRYPTION_ALGORITHM,
+        length: SECURITY.KEY_LENGTH
       },
       true,
       ['encrypt', 'decrypt']
@@ -65,7 +65,7 @@ export class CryptoManager {
     try {
       const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
       const salt = crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
-      const masterKey = await this.generateEncryptionKey();
+      const masterKey = await this.generateKey();
       const derivedKey = await this.deriveKey(chrome.runtime.id);
 
       const encoder = new TextEncoder();
@@ -101,7 +101,7 @@ export class CryptoManager {
       };
     } catch (error) {
       console.error('Encryption error:', error);
-      throw new CryptoError(ERRORS.API_KEY.ENCRYPT_ERROR());
+      throw new Error(ERRORS.API_KEY.ENCRYPT_ERROR());
     }
   }
 
@@ -170,6 +170,10 @@ export class CryptoManager {
 
       const decryptedKey = new TextDecoder().decode(finalDecryption);
       
+      if (!decryptedKey.startsWith('sk-')) {
+        throw new Error(ERRORS.API_KEY.FORMAT());
+      }
+
       const currentIntegrity = await this.generateChecksum(decryptedKey);
       if (currentIntegrity !== integrity) {
         throw new CryptoError('Intégrité de la clé compromise');
@@ -179,7 +183,7 @@ export class CryptoManager {
 
     } catch (error) {
       console.error('Decryption error:', error);
-      throw new CryptoError(ERRORS.API_KEY.DECRYPT_ERROR());
+      throw new Error(ERRORS.API_KEY.DECRYPT_ERROR());
     }
   }
 

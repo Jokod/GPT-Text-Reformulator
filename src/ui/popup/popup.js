@@ -1,111 +1,98 @@
 import { CryptoManager } from '../../services/crypto.js';
 import { ApiKeyValidator } from '../../utils/validation.js';
+import { showStatus, removeStatus, togglePasswordVisibility } from '../ui.js';
+import { STORAGE_KEYS } from '../../utils/constants.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const apiKeyInput = document.getElementById('apiKey');
-  const togglePasswordButton = document.getElementById('togglePassword');
-  const saveButton = document.getElementById('saveButton');
-  const formGroup = document.querySelector('.form-group');
-  const showOnFocusCheckbox = document.getElementById('showOnFocus');
+  const elements = {
+    apiKeyInput: document.getElementById('apiKey'),
+    togglePasswordButton: document.getElementById('togglePassword'),
+    saveButton: document.getElementById('saveButton'),
+    formGroup: document.querySelector('.form-group'),
+    showOnFocusCheckbox: document.getElementById('showOnFocus'),
+    styleSelect: document.getElementById('styleSelect')
+  };
 
-  // Charger la clé API existante et les paramètres
+  document.body.classList.add('loading');
+
   try {
-    const [encryptedKey, { showOnFocus }] = await Promise.all([
-      getEncryptedKey(),
-      chrome.storage.local.get('showOnFocus')
+    const [{ showOnFocus, [STORAGE_KEYS.STYLE]: style }, decryptedKey] = await Promise.all([
+      chrome.storage.local.get([STORAGE_KEYS.SHOW_ON_FOCUS, STORAGE_KEYS.STYLE]),
+      chrome.runtime.sendMessage({ action: 'getDecryptedApiKey' })
     ]);
 
-    if (encryptedKey) {
-      const apiKeyValue = await chrome.runtime.sendMessage({ 
-        action: 'getDecryptedApiKey' 
-      });
-      if (apiKeyValue) {
-        apiKeyInput.value = apiKeyValue;
-      }
+    elements.showOnFocusCheckbox.checked = showOnFocus ?? false;
+    if (style) {
+      elements.styleSelect.value = style;
     }
 
-    showOnFocusCheckbox.checked = showOnFocus !== false;
+    if (decryptedKey) {
+      elements.apiKeyInput.value = decryptedKey;
+    }
+
   } catch (error) {
     console.error('Erreur lors du chargement des paramètres:', error);
+    showStatus("Erreur lors du chargement des paramètres", 'error', elements.formGroup);
+  } finally {
+    document.body.classList.remove('loading');
   }
 
   // Gestionnaire pour la checkbox
-  showOnFocusCheckbox.addEventListener('change', async () => {
+  elements.showOnFocusCheckbox.addEventListener('change', async () => {
     try {
-      await chrome.storage.local.set({ showOnFocus: showOnFocusCheckbox.checked });
-      
-      // Notifier tous les onglets du changement
-      const tabs = await chrome.tabs.query({});
-      await Promise.all(tabs.map(tab => 
-        chrome.tabs.sendMessage(tab.id, {
-          action: 'updateShowOnFocus',
-          value: showOnFocusCheckbox.checked
-        }).catch(() => {/* Ignorer les erreurs pour les onglets qui n'ont pas le content script */})
-      ));
+      await chrome.storage.local.set({ 
+        [STORAGE_KEYS.SHOW_ON_FOCUS]: elements.showOnFocusCheckbox.checked 
+      });
+      await notifyAllTabs('updateShowOnFocus', { value: elements.showOnFocusCheckbox.checked });
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du paramètre:', error);
     }
   });
 
   // Gestionnaire de sauvegarde
-  saveButton.addEventListener('click', async () => {
-    const apiKey = apiKeyInput.value.trim();
+  elements.saveButton.addEventListener('click', async () => {
+    const apiKey = elements.apiKeyInput.value.trim();
     
     try {
       await ApiKeyValidator.validate(apiKey);
-      const encrypted = await CryptoManager.encryptApiKey(apiKey);
-      await saveEncryptedKey(encrypted);
+      await chrome.runtime.sendMessage({ 
+        action: 'encryptApiKey', 
+        apiKey: apiKey
+      });
       
-      showStatus("Clé API sauvegardée avec succès", 'success', formGroup);
+      showStatus("Clé API sauvegardée avec succès", 'success', elements.formGroup);
       setTimeout(removeStatus, 2000);
-
     } catch (error) {
-      showStatus(error.message, 'error', formGroup);
+      showStatus(error.message, 'error', elements.formGroup);
     }
   });
 
   // Gestionnaire de visibilité du mot de passe
-  togglePasswordButton.addEventListener('click', () => {
-    togglePasswordVisibility(apiKeyInput, togglePasswordButton);
+  elements.togglePasswordButton.addEventListener('click', () => {
+    togglePasswordVisibility(elements.apiKeyInput, elements.togglePasswordButton);
+  });
+
+  // Gestionnaire pour le select de style
+  elements.styleSelect.addEventListener('change', async () => {
+    try {
+      await chrome.storage.local.set({ 
+        [STORAGE_KEYS.STYLE]: elements.styleSelect.value 
+      });
+      await notifyAllTabs('updateStyle', { style: elements.styleSelect.value });
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du style:', error);
+      showStatus("Erreur lors de la mise à jour du style", 'error', elements.styleSelect.parentElement);
+    }
   });
 });
 
-async function saveEncryptedKey(encryptedKey) {
-  return chrome.storage.local.set({ encryptedApiKey: encryptedKey });
-}
-
-async function getEncryptedKey() {
-  const { encryptedApiKey } = await chrome.storage.local.get('encryptedApiKey');
-  return encryptedApiKey;
-}
-
-function togglePasswordVisibility(inputElement, buttonElement) {
-  const isPassword = inputElement.type === 'password';
-  inputElement.type = isPassword ? 'text' : 'password';
-  
-  const showPasswordIcon = buttonElement.querySelector('.show-password');
-  const hidePasswordIcon = buttonElement.querySelector('.hide-password');
-  
-  showPasswordIcon.classList.toggle('hidden');
-  hidePasswordIcon.classList.toggle('hidden');
-}
-
-function showStatus(message, type, parentElement) {
-  // Supprimer tout message de statut existant
-  removeStatus();
-  
-  // Créer le nouvel élément de statut
-  const statusElement = document.createElement('div');
-  statusElement.className = `status-message ${type}`;
-  statusElement.textContent = message;
-  
-  // Ajouter après le parent
-  parentElement.insertAdjacentElement('afterend', statusElement);
-}
-
-function removeStatus() {
-  const existingStatus = document.querySelector('.status-message');
-  if (existingStatus) {
-    existingStatus.remove();
-  }
+// Fonction utilitaire pour notifier tous les onglets
+async function notifyAllTabs(action, data) {
+  const tabs = await chrome.tabs.query({});
+  return Promise.all(tabs.map(tab => 
+    chrome.tabs.sendMessage(tab.id, {
+      action,
+      ...data
+    }).catch(() => {/* Ignorer les erreurs pour les onglets qui n'ont pas le content script */})
+  ));
 } 
