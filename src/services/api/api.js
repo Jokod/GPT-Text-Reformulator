@@ -1,5 +1,5 @@
-import { API, ERRORS } from './constants.js';
-import { ApiError } from './errors.js';
+import { API, ERRORS } from '../../utils/constants.js';
+import { ApiError } from '../../utils/errors.js';
 
 export async function callOpenAI(endpoint, options) {
   try {

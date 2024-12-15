@@ -11,7 +11,7 @@
         <path d="M24 4C12.95 4 4 12.95 4 24C4 35.05 12.95 44 24 44C35.05 44 44 35.05 44 24C44 12.95 35.05 4 24 4ZM24 40C15.18 40 8 32.82 8 24C8 15.18 15.18 8 24 8C32.82 8 40 15.18 40 24C40 32.82 32.82 40 24 40Z" fill="#4285F4"/>
         <path d="M31 18H17C15.9 18 15 18.9 15 20V28C15 29.1 15.9 30 17 30H31C32.1 30 33 29.1 33 28V20C33 18.9 32.1 18 31 18Z" fill="#4285F4"/>
       </svg>
-      <h1>GPT Reformulator</h1>
+      <h1>GPT Text Reformulator</h1>
     </header>
 
     <div class="form-group">
@@ -35,6 +35,27 @@
         <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
       </svg>
     </button>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="showOnFocus">
+        <span>Afficher le menu d'actions</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="styleSelect">Style de reformulation</label>
+      <div class="select-wrapper">
+        <select id="styleSelect" class="style-select">
+          <option value="professional">Professionnel</option>
+          <option value="casual">Décontracté</option>
+          <option value="formal">Formel</option>
+        </select>
+        <svg class="select-arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
 
     <div class="footer">
       <a href="https://platform.openai.com/api-keys" target="_blank" class="api-link">

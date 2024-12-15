@@ -5,25 +5,27 @@ VERSION_NAME = $(shell jq -r .version_name manifest.json)
 BUILD_DIR = build
 DIST_DIR = dist
 ZIP_NAME = $(NAME)-v$(VERSION).zip
+UGLIFYJS = npx uglify-js
+JS_FILES = $(shell find . -name "*.js" -not -path "./node_modules/*" -not -path "./$(BUILD_DIR)/*" -not -path "./$(DIST_DIR)/*")
 
 # Required files and directories
 REQUIRED_FILES = \
 	manifest.json \
-	background/background.js \
-	content/content.js \
-	content/content.css \
-	popup/popup.html \
-	popup/popup.js \
-	popup/popup.css \
-	utils/crypto.js \
+	src/background/background.js \
+	src/content/content.js \
+	src/content/content.css \
+	src/ui/popup/popup.html \
+	src/ui/popup/popup.js \
+	src/ui/popup/popup.css \
+	src/utils/crypto.js \
 	utils/storage.js \
-	utils/openai.js \
-	utils/constants.js \
-	utils/errors.js \
-	utils/security.js \
-	utils/ui.js \
-	utils/validation.js \
-	icons/icon.png \
+	src/utils/openai.js \
+	src/utils/constants.js \
+	src/utils/errors.js \
+	src/utils/security.js \
+	src/utils/ui.js \
+	src/utils/validation.js \
+	src/assets/icons/icon.png \
 	LICENSE \
 	README.md
 
@@ -66,7 +68,12 @@ build:
 	@mkdir -p $(BUILD_DIR)
 	@for file in $(REQUIRED_FILES); do \
 		mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
-		cp $$file $(BUILD_DIR)/$$file; \
+		if [ "$(VERSION_NAME)" != *"dev"* ] && [ "$${file%.js}" != "$$file" ]; then \
+			echo "Minifying $$file..."; \
+			$(UGLIFYJS) $$file -o $(BUILD_DIR)/$$file; \
+		else \
+			cp $$file $(BUILD_DIR)/$$file; \
+		fi \
 	done
 	@echo "✅ Build complete"
 

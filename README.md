@@ -13,8 +13,8 @@ A Chrome extension that helps reformulate text using ChatGPT API. It provides di
 - Three writing styles: Professional, Casual, and Formal
 - Text history with undo/redo functionality
 - Keyboard shortcuts
-- Dark mode support
 - Smooth typing animation
+- Configurable UI behavior (auto-show/hide toolbar)
 
 ## Installation
 
@@ -28,6 +28,7 @@ A Chrome extension that helps reformulate text using ChatGPT API. It provides di
 1. Click the extension icon in Chrome toolbar
 2. Enter your OpenAI API key
 3. Click "Save"
+4. (Optional) Enable "Show actions menu" if you want the toolbar to appear automatically when focusing on text fields
 
 To get an API key:
 - Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
@@ -38,8 +39,8 @@ To get an API key:
 
 ### Basic Usage
 1. Click on any text input or textarea on a webpage
-2. The reformulation toolbar will appear below
-3. Click the refresh icon or press Alt+R to reformulate the text
+2. Right-click to access the context menu, or use keyboard shortcuts
+3. If enabled in settings, the reformulation toolbar will appear automatically on focus
 
 ### Writing Styles
 Click the settings icon to choose between:

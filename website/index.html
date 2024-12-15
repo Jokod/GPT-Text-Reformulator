@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test GPT Reformulator</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="node_modules/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
+    <script type="module" src="tinymce-config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -96,18 +98,34 @@
                 </div>
             </form>
         </div>
+
+        <div class="test-section">
+            <h2>Éditeur TinyMCE</h2>
+            <div class="input-group">
+                <label for="tinymce-editor">Éditeur riche :</label>
+                <textarea id="tinymce-editor">
+                    Ceci est un exemple de texte dans TinyMCE. Vous pouvez le modifier et tester la reformulation...
+                </textarea>
+            </div>
+        </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initTinyMCE } from './tinymce-config.js';
+
         document.querySelectorAll('.copy-button').forEach(button => {
             button.addEventListener('click', () => {
                 const text = button.nextElementSibling.textContent;
                 navigator.clipboard.writeText(text);
-                
-                // Feedback visuel
+
                 button.classList.add('copied');
                 setTimeout(() => button.classList.remove('copied'), 1000);
             });
+        });
+
+        // Initialisation de TinyMCE avec callback
+        document.addEventListener('DOMContentLoaded', () => {
+            initTinyMCE();
         });
     </script>
 </body>
