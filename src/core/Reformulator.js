@@ -41,9 +41,7 @@ export class Reformulator {
         return;
       }
 
-      const wrapper = editor instanceof TinyMCEAdapter ? 
-        element.nextElementSibling?.nextElementSibling : 
-        element.nextElementSibling;
+      const wrapper = editor.getButtonsWrapper();
         
       const reformulateButton = wrapper?.querySelector('.gpt-reformulate-button');
       
@@ -109,9 +107,7 @@ export class Reformulator {
       
       this.state.isReformulating = false;
       
-      const wrapper = editor instanceof TinyMCEAdapter ? 
-        element.nextElementSibling?.nextElementSibling : 
-        element.nextElementSibling;
+      const wrapper = editor.getButtonsWrapper();
       const reformulateButton = wrapper?.querySelector('.gpt-reformulate-button');
       
       if (reformulateButton) {

@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "postinstall": "node copy-tinymce.js"
+  },
   "dependencies": {
-    "tinymce": "^7.6.0"
+    "tinymce": "^6.7.0"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.1.1"
   }
 }

@@ -122,7 +122,8 @@ export class App {
       input:not([type]),
       textarea,
       [contenteditable="true"],
-      .tox-tinymce textarea  /* Ajout spécifique pour TinyMCE */
+      .tox-tinymce textarea,
+      .mce-tinymce textarea
     `;
   }
 

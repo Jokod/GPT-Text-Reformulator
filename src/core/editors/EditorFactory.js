@@ -11,27 +11,39 @@ export class EditorFactory {
 
   static async createAdapter(element) {
     const matchingAdapter = await this.#findMatchingAdapter(element);
-    if (!matchingAdapter) return null;
+    if (!matchingAdapter) {
+      return null;
+    }
 
     return this.#instantiateAdapter(matchingAdapter, element);
   }
 
   static async #findMatchingAdapter(element) {
     for (const Adapter of this.#adapters) {
-      if (await Adapter.matches(element)) {
-        return Adapter;
+      try {
+        const matches = await Adapter.matches(element);
+        if (matches) {
+          return Adapter;
+        }
+      } catch (error) {
+        // Silently continue to next adapter
       }
     }
     return null;
   }
 
   static async #instantiateAdapter(Adapter, element) {
-    const adapter = new Adapter(element);
-    await adapter.initialize?.();
-    return adapter;
+    try {
+      const adapter = new Adapter(element);
+      await adapter.initialize?.();
+      return adapter;
+    } catch (error) {
+      return null;
+    }
   }
 
   static async isSupported(element) {
-    return await this.#adapters.some(adapter => adapter.matches(element));
+    const adapter = await this.#findMatchingAdapter(element);
+    return !!adapter;
   }
 } 

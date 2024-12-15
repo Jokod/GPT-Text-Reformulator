@@ -46,7 +46,7 @@ export class UIManager {
     }
   }
 
-  static #canAddButtons(element) {
+  static async #canAddButtons(element) {
     return EditorFactory.isSupported(element) && !this.hasExistingWrapper(element);
   }
 
