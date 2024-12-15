@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GPT Text Reformulator",
   "version": "1.2.1",
-  "version_name": "1.2.1-dev",
+  "version_name": "1.2.1",
   "description": "Reformule le texte avec ChatGPT",
   "permissions": [
     "storage",
