@@ -1,9 +1,8 @@
 # GPT Text Reformulator - Chrome Extension
 
-![Présentation du GPT Text Reformulator](docs/presentation.gif)
+![GPT Text Reformulator Presentation](docs/presentation.gif)
 
 ![GitHub License](https://img.shields.io/github/license/Jokod/GPT-Text-Reformulator) ![GitHub Release](https://img.shields.io/github/v/release/Jokod/GPT-Text-Reformulator) [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FJokod%2FGPT-Text-Reformulator&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
-
 
 A Chrome extension that helps reformulate text using ChatGPT API. It provides different writing styles and keeps track of text history.
 
@@ -15,6 +14,7 @@ A Chrome extension that helps reformulate text using ChatGPT API. It provides di
 - Keyboard shortcuts
 - Smooth typing animation
 - Configurable UI behavior (auto-show/hide toolbar)
+- Full TinyMCE editor support (both modern and legacy versions)
 
 ## Installation
 
@@ -59,3 +59,10 @@ Use the toolbar buttons to:
 - ↶ Undo changes
 - ↷ Redo changes
 - ⟲ Reset to original text
+
+### Editor Support
+The extension is compatible with:
+- Standard text inputs
+- Textareas
+- Contenteditable elements
+- TinyMCE (all versions, including legacy)

@@ -20,7 +20,6 @@ export class TinyMCEAdapter extends EditorAdapter {
     this.initialized = false;
     this.initializationPromise = null;
     
-    // Ajouter les styles dans l'iframe
     this.disabledStyles = `
       .gpt-editor-disabled {
         background-color: #f5f5f5 !important;
@@ -50,7 +49,7 @@ export class TinyMCEAdapter extends EditorAdapter {
 
     this.initializationPromise = this.#waitForTinyMCE().then(() => {
       this.#setupEditor();
-      this.#injectStyles(); // Injecter les styles après l'initialisation
+      this.#injectStyles();
       this.initialized = true;
       return this;
     }).catch(error => {
@@ -64,23 +63,56 @@ export class TinyMCEAdapter extends EditorAdapter {
     return new Promise((resolve) => {
       const checkTinyMCE = () => {
         const tinyMCEDiv = this.textarea.nextElementSibling;
-        if (!tinyMCEDiv?.classList.contains('tox-tinymce')) return null;
+        const isModernVersion = tinyMCEDiv?.classList.contains('tox-tinymce');
+        const iframe = document.getElementById(`${this.textarea.id}_ifr`);
+        const isLegacyVersion = !isModernVersion && 
+                               this.textarea.style.display === 'none' && 
+                               this.textarea.id && 
+                               iframe?.closest('.mce-tinymce');
 
-        const iframe = tinyMCEDiv.querySelector('.tox-edit-area__iframe');
-        if (!iframe?.contentWindow) return null;
+        let iframeToCheck;
+        if (isModernVersion) {
+          iframeToCheck = tinyMCEDiv.querySelector('.tox-edit-area__iframe');
+        } else if (isLegacyVersion) {
+          iframeToCheck = iframe;
+        } else {
+          return null;
+        }
 
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (!iframeDoc?.body) return null;
+        if (!iframeToCheck?.contentWindow) {
+          return null;
+        }
 
-        const isInitialized = iframeDoc.body.getAttribute('contenteditable') === 'true' &&
-                             iframeDoc.body.getAttribute('data-id') === this.textarea.id;
+        const iframeDoc = iframeToCheck.contentDocument || iframeToCheck.contentWindow.document;
+        if (!iframeDoc?.body) {
+          return null;
+        }
+
+        const isInitialized = isModernVersion ? 
+          (iframeDoc.body.getAttribute('contenteditable') === 'true' &&
+           iframeDoc.body.getAttribute('data-id') === this.textarea.id) :
+          (iframeDoc.body.classList.contains('mceContentBody') || 
+           iframeDoc.body.getAttribute('contenteditable') === 'true');
 
         if (!isInitialized) return null;
 
         return {
+          isModernVersion,
+          isLegacyVersion,
+          iframe: iframeToCheck,
           get: () => ({
             getContent: () => iframeDoc.body.innerHTML,
-            setContent: content => { iframeDoc.body.innerHTML = content; },
+            setContent: content => { 
+              if (isLegacyVersion) {
+                setTimeout(() => {
+                  iframeDoc.body.innerHTML = content;
+                  const event = new Event('input', { bubbles: true });
+                  iframeDoc.body.dispatchEvent(event);
+                }, 0);
+              } else {
+                iframeDoc.body.innerHTML = content;
+              }
+            },
             on: (event, callback) => {
               if (event === 'click keyup') {
                 ['click', 'keyup'].forEach(e => 
@@ -103,40 +135,45 @@ export class TinyMCEAdapter extends EditorAdapter {
         };
       };
 
-      if (checkTinyMCE()) {
-        resolve();
-        return;
-      }
-
-      const observer = new MutationObserver(() => {
+      let attempts = 0;
+      const maxAttempts = 50;
+      const interval = 100;
+      
+      const checkInterval = setInterval(() => {
         const tinymce = checkTinyMCE();
         if (tinymce) {
-          observer.disconnect();
+          clearInterval(checkInterval);
           resolve(tinymce);
+        } else if (attempts++ > maxAttempts) {
+          clearInterval(checkInterval);
+          console.warn('TinyMCE initialization timeout');
+          resolve(null);
         }
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'class']
-      });
+      }, interval);
     });
   }
 
   #setupEditor() {
     const tinyMCEDiv = this.textarea.nextElementSibling;
-    if (!tinyMCEDiv?.classList.contains('tox-tinymce')) {
-      throw new Error('TinyMCE container not found');
+    const isModernVersion = tinyMCEDiv?.classList.contains('tox-tinymce');
+    const iframe = document.getElementById(`${this.textarea.id}_ifr`);
+    const isLegacyVersion = !isModernVersion && 
+                           this.textarea.style.display === 'none' && 
+                           this.textarea.id && 
+                           iframe && 
+                           !!iframe.closest('.mce-tinymce');
+    
+    if (isModernVersion) {
+      this.iframe = tinyMCEDiv.querySelector('.tox-edit-area__iframe');
+      this.element = tinyMCEDiv;
+    } else if (isLegacyVersion) {
+      this.iframe = iframe;
+      this.element = iframe.closest('.mce-tinymce');
     }
 
-    this.iframe = tinyMCEDiv.querySelector('.tox-edit-area__iframe');
-    if (!this.iframe) {
-      throw new Error('TinyMCE iframe not found');
+    if (!this.iframe || !this.element) {
+      throw new Error('TinyMCE initialization failed');
     }
-
-    this.element = tinyMCEDiv;
   }
 
   setupButtons(buttonsWrapper) {
@@ -145,7 +182,10 @@ export class TinyMCEAdapter extends EditorAdapter {
       return;
     }
 
-    if (!this.iframe) return;
+    if (!this.iframe || !this.element) {
+      console.warn('TinyMCE: not properly initialized during setupButtons');
+      return;
+    }
 
     this.element.parentNode.insertBefore(buttonsWrapper, this.element.nextSibling);
     buttonsWrapper.classList.add('gpt-buttons-wrapper');
@@ -159,23 +199,41 @@ export class TinyMCEAdapter extends EditorAdapter {
     let isInteractingWithButtons = false;
 
     const handleFocus = () => {
-      const hasFocus = this.element.classList.contains('tox-edit-focus') || isInteractingWithButtons;
+      const hasFocus = (this.element.classList.contains('tox-edit-focus') || 
+                       this.iframe.contentDocument.body.classList.contains('mce-edit-focus')) || 
+                       isInteractingWithButtons;
       buttonsWrapper.style.display = hasFocus ? 'flex' : 'none';
     };
 
-    this.iframe.contentDocument.addEventListener('focus', () => {
-      this.element.classList.add('tox-edit-focus');
-      handleFocus();
-    }, true);
-
-    this.iframe.contentDocument.addEventListener('blur', (event) => {
-      const isClickInButtons = buttonsWrapper.contains(event.relatedTarget);
-      
-      if (!isClickInButtons && !isInteractingWithButtons) {
-        this.element.classList.remove('tox-edit-focus');
+    if (this.element.classList.contains('tox-tinymce')) {
+      this.iframe.contentDocument.addEventListener('focus', () => {
+        this.element.classList.add('tox-edit-focus');
         handleFocus();
-      }
-    }, true);
+      }, true);
+
+      this.iframe.contentDocument.addEventListener('blur', (event) => {
+        const isClickInButtons = buttonsWrapper.contains(event.relatedTarget);
+        
+        if (!isClickInButtons && !isInteractingWithButtons) {
+          this.element.classList.remove('tox-edit-focus');
+          handleFocus();
+        }
+      }, true);
+    } else {
+      this.iframe.contentDocument.addEventListener('focus', () => {
+        this.iframe.contentDocument.body.classList.add('mce-edit-focus');
+        handleFocus();
+      }, true);
+
+      this.iframe.contentDocument.addEventListener('blur', (event) => {
+        const isClickInButtons = buttonsWrapper.contains(event.relatedTarget);
+        
+        if (!isClickInButtons && !isInteractingWithButtons) {
+          this.iframe.contentDocument.body.classList.remove('mce-edit-focus');
+          handleFocus();
+        }
+      }, true);
+    }
 
     buttonsWrapper.addEventListener('mouseenter', () => {
       isInteractingWithButtons = true;
@@ -187,7 +245,11 @@ export class TinyMCEAdapter extends EditorAdapter {
       const isFocusInEditor = this.iframe.contentDocument.activeElement === this.iframe.contentDocument.body;
       
       if (!isFocusInEditor) {
-        this.element.classList.remove('tox-edit-focus');
+        if (this.element.classList.contains('tox-tinymce')) {
+          this.element.classList.remove('tox-edit-focus');
+        } else {
+          this.iframe.contentDocument.body.classList.remove('mce-edit-focus');
+        }
         handleFocus();
       }
     });
@@ -223,11 +285,8 @@ export class TinyMCEAdapter extends EditorAdapter {
       const body = this.iframe.contentDocument.body;
       if (!body) return '';
       
-      const paragraph = body.querySelector('p');
-      if (paragraph) {
-        return paragraph.innerHTML.trim();
-      }
-      return body.innerHTML.trim();
+      const firstChild = body.firstElementChild || body;
+      return firstChild.innerHTML.trim();
     } catch (error) {
       return '';
     }
@@ -258,13 +317,13 @@ export class TinyMCEAdapter extends EditorAdapter {
         }
       }
 
-      const paragraph = body.querySelector('p');
-      if (paragraph) {
-        paragraph.innerHTML = cleanContent;
-      } else {
-        body.innerHTML = `<p>${cleanContent}</p>`;
+      let firstChild = body.firstElementChild;
+      if (!firstChild) {
+        firstChild = this.iframe.contentDocument.createElement('p');
+        body.appendChild(firstChild);
       }
-      
+
+      firstChild.innerHTML = cleanContent;
       this.textarea.value = cleanContent;
       this.dispatchInputEvent();
     } catch (error) {
@@ -302,44 +361,74 @@ export class TinyMCEAdapter extends EditorAdapter {
   }
 
   static async matches(element) {
-    if (element.closest('.tox-edit-area__iframe')) {
+    if (element.closest('.tox-edit-area__iframe') || element.closest('iframe[id$="_ifr"]')) {
       const textarea = TinyMCEAdapter.getTextareaFromIframe(element);
       if (!textarea) return false;
       element = textarea;
     }
 
-    if (element.tagName !== 'TEXTAREA') {
-      return false;
-    }
-
     try {
-      const tinyMCEDiv = element.nextElementSibling;
-      if (!tinyMCEDiv?.classList.contains('tox-tinymce')) {
+      const modernTinyMCE = element.nextElementSibling?.classList.contains('tox-tinymce');
+      const iframe = document.getElementById(`${element.id}_ifr`);
+
+      const legacyTinyMCE = !modernTinyMCE && 
+                           element.tagName === 'TEXTAREA' &&
+                           element.style.display === 'none' && 
+                           element.id && 
+                           iframe && 
+                           !!iframe.closest('.mce-tinymce');
+
+      if (!modernTinyMCE && !legacyTinyMCE) {
         return false;
       }
 
-      const iframe = tinyMCEDiv.querySelector('.tox-edit-area__iframe');
-      if (!iframe?.contentWindow) {
+      let iframeToCheck;
+      if (modernTinyMCE) {
+        iframeToCheck = element.nextElementSibling.querySelector('.tox-edit-area__iframe');
+      } else if (legacyTinyMCE) {
+        iframeToCheck = iframe;
+      }
+
+      if (!iframeToCheck?.contentWindow) {
         return false;
       }
 
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      const iframeDoc = iframeToCheck.contentDocument || iframeToCheck.contentWindow.document;
       if (!iframeDoc?.body) {
         return false;
       }
 
-      return iframeDoc.body.getAttribute('contenteditable') === 'true' &&
-             iframeDoc.body.getAttribute('data-id') === element.id;
+      if (modernTinyMCE) {
+        return iframeDoc.body.getAttribute('contenteditable') === 'true' &&
+               iframeDoc.body.getAttribute('data-id') === element.id;
+      } else if (legacyTinyMCE) {
+        return iframeDoc.body.classList.contains('mceContentBody') || 
+               iframeDoc.body.getAttribute('contenteditable') === 'true' ||
+               iframeDoc.designMode.toLowerCase() === 'on';
+      }
+
+      return false;
     } catch (error) {
       return false;
     }
   }
 
   static getTextareaFromIframe(element) {
-    const iframe = element.closest('.tox-edit-area__iframe');
-    if (iframe) {
-      return iframe.closest('.tox-tinymce')?.previousElementSibling;
+    // Version moderne
+    const modernIframe = element.closest('.tox-edit-area__iframe');
+    if (modernIframe) {
+      return modernIframe.closest('.tox-tinymce')?.previousElementSibling;
     }
+
+    // Version legacy (TinyMCE 4 ou mceEditor)
+    const legacyIframe = element.closest('iframe[id$="_ifr"]') || 
+                        element.closest('#tinymce,iframe.mceEditorIframe');
+    if (legacyIframe) {
+      const parentId = legacyIframe.id?.replace('_ifr', '') || 
+                      legacyIframe.closest('[id$="_parent"]')?.id.replace('_parent', '');
+      return document.getElementById(parentId);
+    }
+
     return null;
   }
 
@@ -358,8 +447,19 @@ export class TinyMCEAdapter extends EditorAdapter {
   }
 
   getButtonsWrapper() {
-    return this.element?.nextElementSibling?.classList.contains('gpt-buttons-wrapper') ? 
-        this.element.nextElementSibling : 
-        this.textarea.nextElementSibling?.nextElementSibling;
+    // Pour la version moderne
+    if (this.element?.classList.contains('tox-tinymce')) {
+      return this.element.nextElementSibling?.classList.contains('gpt-buttons-wrapper') ? 
+        this.element.nextElementSibling : null;
+    }
+    
+    // Pour la version legacy
+    if (this.element?.classList.contains('mce-tinymce')) {
+      return this.element.nextElementSibling?.classList.contains('gpt-buttons-wrapper') ? 
+        this.element.nextElementSibling : null;
+    }
+
+    // Fallback
+    return this.textarea.nextElementSibling?.nextElementSibling;
   }
 } 
