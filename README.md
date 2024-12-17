@@ -15,6 +15,11 @@ A Chrome extension that helps reformulate text using ChatGPT API. It provides di
 - Smooth typing animation
 - Configurable UI behavior (auto-show/hide toolbar)
 - Full TinyMCE editor support (both modern and legacy versions)
+- Multilingual support
+  - Interface available in French and English
+  - Language selector in the interface
+  - Messages and prompts translated automatically
+  - Extensible support for other languages
 
 ## Installation
 
@@ -34,6 +39,15 @@ To get an API key:
 - Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
 - Create a new key
 - Copy and paste it into the extension settings
+
+### Available Languages
+- 🇬🇧 English (default)
+- 🇫🇷 French
+
+To change the language:
+1. Click on the extension icon
+2. Use the language selector in the top right corner
+3. The new language is applied immediately
 
 ## Usage
 
