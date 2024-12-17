@@ -14,12 +14,14 @@ const MODULE_CONFIG = {
     modules: {
       TextHistory: 'src/core/TextHistory.js',
       TypeWriter: 'src/core/TypeWriter.js',
-      Reformulator: 'src/core/Reformulator.js'
+      Reformulator: 'src/core/Reformulator.js',
+      I18nService: 'src/core/i18n.js'
     }
   },
   [MODULE_TYPES.UI]: {
     modules: {
-      UIManager: 'src/ui/UIManager.js'
+      UIManager: 'src/ui/UIManager.js',
+      UITranslate: 'src/ui/UITranslate.js'
     }
   }
 };

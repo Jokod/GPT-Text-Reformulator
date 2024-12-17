@@ -1,0 +1,194 @@
+{
+  "appName": {
+    "message": "GPT Text Reformulator",
+    "description": "Nom de l'application"
+  },
+  "appDesc": {
+    "message": "Reformulez votre texte avec ChatGPT",
+    "description": "Description de l'application"
+  },
+  "reformulateButton": {
+    "message": "Reformuler",
+    "description": "Texte du bouton de reformulation"
+  },
+  "settingsTitle": {
+    "message": "Paramètres",
+    "description": "Titre de la section paramètres"
+  },
+  "undoButton": {
+    "message": "Version précédente",
+    "description": "Bouton pour revenir à la version précédente"
+  },
+  "redoButton": {
+    "message": "Version suivante",
+    "description": "Bouton pour aller à la version suivante"
+  },
+  "rollbackButton": {
+    "message": "Version originale",
+    "description": "Bouton pour revenir à la version originale"
+  },
+  "apiKeyLabel": {
+    "message": "Clé API OpenAI",
+    "description": "Label du champ de clé API"
+  },
+  "apiKeyPlaceholder": {
+    "message": "sk-...",
+    "description": "Placeholder pour la clé API"
+  },
+  "saveButton": {
+    "message": "Enregistrer",
+    "description": "Texte du bouton de sauvegarde"
+  },
+  "showActionsMenu": {
+    "message": "Afficher le menu d'actions",
+    "description": "Label de la case à cocher pour afficher le menu"
+  },
+  "reformulationStyle": {
+    "message": "Style de reformulation",
+    "description": "Label du sélecteur de style"
+  },
+  "professionalStyle": {
+    "message": "Professionnel",
+    "description": "Option style professionnel"
+  },
+  "casualStyle": {
+    "message": "Décontracté",
+    "description": "Option style décontracté"
+  },
+  "formalStyle": {
+    "message": "Formel",
+    "description": "Option style formel"
+  },
+  "getApiKey": {
+    "message": "Obtenir une clé API",
+    "description": "Texte du lien pour obtenir une clé API"
+  },
+  "apiKeySaved": {
+    "message": "Clé API sauvegardée avec succès",
+    "description": "Message de succès lors de la sauvegarde de la clé API"
+  },
+  "errorLoadingSettings": {
+    "message": "Erreur lors du chargement des paramètres",
+    "description": "Message d'erreur lors du chargement des paramètres"
+  },
+  "errorUpdatingStyle": {
+    "message": "Erreur lors de la mise à jour du style",
+    "description": "Message d'erreur lors de la mise à jour du style"
+  },
+  "errorChangingLanguage": {
+    "message": "Erreur lors du changement de langue",
+    "description": "Message d'erreur lors du changement de langue"
+  },
+  "errorApiKeyNotConfigured": {
+    "message": "Clé API non configurée. Veuillez configurer votre clé API dans les paramètres.",
+    "description": "Message d'erreur quand la clé API n'est pas configurée"
+  },
+  "errorApiKeyInvalid": {
+    "message": "Clé API invalide. Veuillez vérifier votre clé.",
+    "description": "Message d'erreur quand la clé API est invalide"
+  },
+  "errorApiKeyEncryption": {
+    "message": "Erreur lors du chiffrement de la clé API",
+    "description": "Message d'erreur lors du chiffrement de la clé"
+  },
+  "errorApiKeyDecryption": {
+    "message": "Erreur lors du déchiffrement de la clé API",
+    "description": "Message d'erreur lors du déchiffrement de la clé"
+  },
+  "errorApiKeyFormat": {
+    "message": "Format de clé API invalide",
+    "description": "Message d'erreur quand le format de la clé est incorrect"
+  },
+  "errorRateLimit": {
+    "message": "Limite de requêtes atteinte. Veuillez réessayer plus tard.",
+    "description": "Message d'erreur de limite de requêtes"
+  },
+  "errorNetwork": {
+    "message": "Erreur réseau. Veuillez vérifier votre connexion.",
+    "description": "Message d'erreur de connexion réseau"
+  },
+  "errorUnknown": {
+    "message": "Une erreur inattendue s'est produite",
+    "description": "Message d'erreur générique"
+  },
+  "professionalPrompt": {
+    "message": "Reformulez ce texte de manière professionnelle en conservant le sens original : ",
+    "description": "Prompt pour le style professionnel"
+  },
+  "professionalSystem": {
+    "message": "Vous êtes un expert en communication professionnelle. Votre tâche est de reformuler le texte de manière claire, précise et professionnelle tout en conservant le message d'origine.",
+    "description": "Message système pour le style professionnel"
+  },
+  "casualPrompt": {
+    "message": "Reformulez ce texte de manière décontractée et naturelle : ",
+    "description": "Prompt pour le style décontracté"
+  },
+  "casualSystem": {
+    "message": "Vous êtes un expert en communication décontractée. Votre tâche est de reformuler le texte de manière naturelle et accessible tout en conservant le message d'origine.",
+    "description": "Message système pour le style décontracté"
+  },
+  "formalPrompt": {
+    "message": "Reformulez ce texte de manière formelle et soutenue : ",
+    "description": "Prompt pour le style formel"
+  },
+  "formalSystem": {
+    "message": "Vous êtes un expert en communication formelle. Votre tâche est de reformuler le texte dans un style soutenu et élégant tout en conservant le message d'origine.",
+    "description": "Message système pour le style formel"
+  },
+  "tinyMCESystemInstructions": {
+    "message": "La balise [NEWLINE] représente un saut de ligne. À chaque occurrence d'un saut de ligne, peu importe le contexte, il est OBLIGATOIRE d'insérer explicitement la balise [NEWLINE] à cet endroit. Si la balise est déjà présente, elle doit rester intacte et être réécrite telle quelle dans le texte. Aucun saut de ligne ne doit exister sans la présence de la balise [NEWLINE].",
+    "description": "Instructions système pour TinyMCE concernant les sauts de ligne"
+  },
+  "contextMenuTitle": {
+    "message": "GPT Text Reformulator",
+    "description": "Titre du menu contextuel principal"
+  },
+  "contextMenuReformulate": {
+    "message": "Reformuler",
+    "description": "Option du menu contextuel pour reformuler"
+  },
+  "contextMenuUndo": {
+    "message": "Version précédente",
+    "description": "Option du menu contextuel pour revenir en arrière"
+  },
+  "contextMenuRedo": {
+    "message": "Version suivante",
+    "description": "Option du menu contextuel pour aller en avant"
+  },
+  "contextMenuRollback": {
+    "message": "Version originale",
+    "description": "Option du menu contextuel pour revenir à l'original"
+  },
+  "errorTinyMCEInit": {
+    "message": "L'éditeur TinyMCE doit être initialisé avec un élément textarea",
+    "description": "Message d'erreur pour l'initialisation de TinyMCE"
+  },
+  "errorTooManyAttempts": {
+    "message": "Trop de tentatives. Veuillez attendre avant de réessayer.",
+    "description": "Message d'erreur pour trop de tentatives"
+  },
+  "errorDevMode": {
+    "message": "Mode développeur détecté",
+    "description": "Message d'erreur pour le mode développeur"
+  },
+  "errorUnsafeEnvironment": {
+    "message": "Environnement non sécurisé détecté",
+    "description": "Message d'erreur pour environnement non sécurisé"
+  },
+  "errorDevTools": {
+    "message": "Outils de développement détectés",
+    "description": "Message d'erreur pour les outils de développement"
+  },
+  "errorUnauthorizedAccess": {
+    "message": "Accès non autorisé",
+    "description": "Message d'erreur pour accès non autorisé"
+  },
+  "errorKeyIntegrity": {
+    "message": "Intégrité de la clé compromise",
+    "description": "Message d'erreur pour l'intégrité de la clé"
+  },
+  "errorKeyUnavailable": {
+    "message": "La clé API n'est plus disponible",
+    "description": "Message d'erreur pour clé API non disponible"
+  }
+} 

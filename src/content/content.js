@@ -36,6 +36,10 @@ class ContentScript {
         updateStyle: () => {
           this.app.updateStyle(request.style);
           return false;
+        },
+        updateLocale: async () => {
+          await this.app.updateLocale(request.locale);
+          return false;
         }
       };
 

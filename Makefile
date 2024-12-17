@@ -55,7 +55,8 @@ SRC_DIRS = \
 	src/core \
 	src/services \
 	src/ui \
-	src/utils
+	src/utils \
+	_locales
 
 # Version management
 define update_version

@@ -1,5 +1,4 @@
 import { STORAGE_KEYS } from '../utils/constants.js';
-import { UIManager } from '../ui/UIManager.js';
 import { EditorFactory } from './editors/EditorFactory.js';
 
 export class App {
@@ -26,13 +25,16 @@ export class App {
         TextHistory: null,
         TypeWriter: null,
         UIManager: null,
-        Reformulator: null
+        Reformulator: null,
+        I18nService: null,
+        UITranslate: null
       }
     };
 
     this.instances = {
       typeWriter: null,
-      reformulator: null
+      reformulator: null,
+      i18n: null
     };
   }
 
@@ -64,6 +66,7 @@ export class App {
     // Initialiser les instances
     this.instances.typeWriter = new classes.TypeWriter();
     this.instances.reformulator = new classes.Reformulator();
+    this.instances.i18n = await classes.I18nService.init();
     
     // Configurer le reformulateur
     this.instances.reformulator.init({
@@ -159,11 +162,15 @@ export class App {
     const wrapper = input.nextElementSibling;
     
     if (this.state.showOnFocus && wrapper?.classList.contains('gpt-buttons-wrapper')) {
-      const reformulator = this.instances.reformulator;
-      // Ne pas cacher si une reformulation est en cours
-      if (!reformulator.state.isReformulating) {
-        wrapper.style.display = 'none';
-      }
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        const isHovered = wrapper.dataset.hover === 'true';
+        
+        // Ne pas cacher si la souris est sur le wrapper ou si un bouton a le focus
+        if (!isHovered && !wrapper.contains(activeElement)) {
+          wrapper.style.display = 'none';
+        }
+      }, 100);
     }
   }
 
@@ -259,5 +266,16 @@ export class App {
         const wrapper = editor.getButtonsWrapper();
         editor.updateHistoryButtons(wrapper, history);
     }
+  }
+
+  async updateLocale(newLocale) {
+    // Charger les nouvelles traductions avec la nouvelle locale
+    await this.instances.i18n.setLocale(newLocale);
+    
+    // Mettre à jour les textes des boutons
+    document.querySelectorAll('.gpt-buttons-wrapper').forEach(wrapper => {
+      // Passer this comme référence à l'app
+      this.modules.classes.UITranslate.translateButtons(wrapper, this);
+    });
   }
 } 

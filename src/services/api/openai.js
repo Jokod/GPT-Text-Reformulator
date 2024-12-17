@@ -22,6 +22,7 @@ export async function reformulateText(apiKey, text, template) {
     }
 
     const systemInstructions = template.system + (template.systemInstructions || '');
+    const promptText = template.prompt + text;
 
     const response = await fetch(`${API.OPENAI.BASE_URL}/chat/completions`, {
       method: 'POST',
@@ -33,7 +34,7 @@ export async function reformulateText(apiKey, text, template) {
         model: API.OPENAI.MODEL,
         messages: [
           { role: 'system', content: systemInstructions },
-          { role: 'user', content: template.prompt + text }
+          { role: 'user', content: promptText }
         ],
         max_tokens: API.OPENAI.MAX_TOKENS,
         temperature: API.OPENAI.TEMPERATURE

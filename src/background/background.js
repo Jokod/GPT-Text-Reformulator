@@ -2,6 +2,18 @@ import { CryptoManager } from '../services/crypto.js';
 import { saveEncryptedKey, getEncryptedKey } from '../services/storage.js';
 import { reformulateText } from '../services/api/openai.js';
 import { ERRORS, SECURITY } from '../utils/constants.js';
+import { I18nService } from '../core/i18n.js';
+import { UITranslate } from '../ui/UITranslate.js';
+
+// Initialiser i18n au démarrage
+let i18nInitialized = false;
+
+async function initializeI18n() {
+  if (!i18nInitialized) {
+    await I18nService.init();
+    i18nInitialized = true;
+  }
+}
 
 const MENU_IDS = {
   PARENT: 'gptReformulator',
@@ -12,13 +24,27 @@ const MENU_IDS = {
 };
 
 const MENU_ITEMS = [
-  { id: MENU_IDS.REFORMULATE, title: 'Reformuler' },
-  { id: MENU_IDS.UNDO, title: 'Version précédente' },
-  { id: MENU_IDS.REDO, title: 'Version suivante' },
-  { id: MENU_IDS.ROLLBACK, title: 'Revenir au texte original' }
+  { id: MENU_IDS.REFORMULATE, titleKey: 'reformulateButton' },
+  { id: MENU_IDS.UNDO, titleKey: 'undoButton' },
+  { id: MENU_IDS.REDO, titleKey: 'redoButton' },
+  { id: MENU_IDS.ROLLBACK, titleKey: 'rollbackButton' }
 ];
 
 async function handleReformulation(text, template) {
+  await initializeI18n();
+  
+  // Récupérer le style depuis le template ou utiliser professional par défaut
+  const style = template?.style || 'professional';
+  
+  // Attendre que la locale soit chargée et obtenir les messages traduits
+  const i18n = I18nService.getInstance();
+  await i18n.loadTranslations(i18n.getCurrentLocale());
+  
+  const selectedTemplate = {
+    system: i18n.t(`${style}System`),
+    prompt: i18n.t(`${style}Prompt`)
+  };
+  
   const encryptedKey = await getEncryptedKey();
   if (!encryptedKey) {
     throw new Error(ERRORS.API_KEY.NOT_CONFIGURED());
@@ -27,7 +53,7 @@ async function handleReformulation(text, template) {
   try {
     const decryptedKey = await CryptoManager.decryptApiKey(encryptedKey);
     const apiKey = decryptedKey.getValue();
-    const result = await reformulateText(apiKey, text, template);
+    const result = await reformulateText(apiKey, text, selectedTemplate);
     return { success: true, reformulatedText: result };
   } catch (error) {
     handleReformulationError(error);
@@ -64,6 +90,28 @@ async function rotateEncryption() {
   }
 }
 
+async function setupContextMenus() {
+  // Supprimer tous les menus existants d'abord
+  await chrome.contextMenus.removeAll();
+  
+  const translations = await UITranslate.translateContextMenus();
+
+  chrome.contextMenus.create({
+    id: MENU_IDS.PARENT,
+    title: translations.appName,
+    contexts: ['editable']
+  });
+
+  Object.entries(translations.menuItems).forEach(([id, title]) => {
+    chrome.contextMenus.create({
+      id: MENU_IDS[id.toUpperCase()],
+      title: title,
+      parentId: MENU_IDS.PARENT,
+      contexts: ['editable']
+    });
+  });
+}
+
 const messageHandlers = {
   async reformulateText(request) {
     const result = await handleReformulation(request.text, request.template);
@@ -91,6 +139,24 @@ const messageHandlers = {
     const encrypted = await CryptoManager.encryptApiKey(request.apiKey);
     await saveEncryptedKey(encrypted);
     return { success: true };
+  },
+
+  async updateLocale(request) {
+    const { locale } = request;
+    await I18nService.init();
+    await I18nService.instance.setLocale(locale);
+    await setupContextMenus();
+    
+    // Notifier tous les onglets du changement de langue
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs.map(tab => 
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'updateLocale',
+        locale
+      }).catch(() => {/* Ignorer les erreurs */})
+    ));
+    
+    return { success: true };
   }
 };
 
@@ -107,22 +173,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-function setupContextMenus() {
-  chrome.contextMenus.create({
-    id: MENU_IDS.PARENT,
-    title: 'GPT Reformulator',
-    contexts: ['editable']
-  });
-
-  MENU_ITEMS.forEach(item => {
-    chrome.contextMenus.create({
-      ...item,
-      parentId: MENU_IDS.PARENT,
-      contexts: ['editable']
-    });
-  });
-}
-
 function handleContextMenuClick(info, tab) {
   chrome.tabs.sendMessage(tab.id, {
     action: 'contextMenuAction',
@@ -131,7 +181,10 @@ function handleContextMenuClick(info, tab) {
   });
 }
 
-chrome.runtime.onInstalled.addListener(setupContextMenus);
+chrome.runtime.onInstalled.addListener(async () => {
+  await initializeI18n();
+  await setupContextMenus();
+});
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 setInterval(rotateEncryption, SECURITY.KEY_ROTATION_INTERVAL);

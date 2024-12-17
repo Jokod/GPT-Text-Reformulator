@@ -30,7 +30,7 @@ export class TinyMCEAdapter extends EditorAdapter {
       }
     `;
 
-    this.systemInstructions = "La balise [NEWLINE] représente un saut de ligne. À chaque occurrence d'un saut de ligne, peu importe le contexte, il est OBLIGATOIRE d'insérer explicitement la balise [NEWLINE] à cet endroit. Si la balise est déjà présente, elle doit rester intacte et être réécrite telle quelle dans le texte. Aucun saut de ligne ne doit exister sans la présence de la balise [NEWLINE].";
+    this.systemInstructions = chrome.i18n.getMessage('tinyMCESystemInstructions');
   }
 
   #injectStyles() {
