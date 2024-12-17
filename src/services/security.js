@@ -14,31 +14,34 @@ export class SecurityChecker {
 
   // Vérifier l'intégrité du navigateur
   static async checkBrowserIntegrity() {
-    // Si on est en développement local, on skip certaines vérifications
+    // Si on est en environnement de développement local, on skip certaines vérifications
     if (this.isLocalDevelopment()) {
       return true;
     }
 
+    // Vérifier si nous sommes dans un Service Worker
+    const isServiceWorker = typeof window === 'undefined';
+
     const checks = {
       // Vérifier si le navigateur est Chrome
-      isChrome: /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor),
+      isChrome: isServiceWorker ? true : /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor),
       
       // Vérifier la présence de fonctions natives critiques
       hasNativeFunctions: (
         typeof crypto.subtle.encrypt === 'function' &&
         typeof crypto.getRandomValues === 'function' &&
-        window.crypto === crypto
+        (isServiceWorker ? true : window.crypto === crypto)
       ),
 
       // Vérifier si l'environnement est sécurisé
-      isSecureContext: window.isSecureContext,
+      isSecureContext: isServiceWorker ? true : self.isSecureContext,
 
       // Vérifier si les API nécessaires sont disponibles
       hasRequiredAPIs: (
         'storage' in chrome &&
         'runtime' in chrome &&
-        'Crypto' in window &&
-        'TextEncoder' in window
+        'Crypto' in (isServiceWorker ? self : window) &&
+        (isServiceWorker ? true : 'TextEncoder' in window)
       )
     };
 
@@ -49,6 +52,11 @@ export class SecurityChecker {
   static detectDevTools() {
     // Si on est en développement local, on autorise les DevTools
     if (this.isLocalDevelopment()) {
+      return async () => false;
+    }
+
+    // Si nous sommes dans un Service Worker, retourner une fonction simplifiée
+    if (typeof window === 'undefined') {
       return async () => false;
     }
 
