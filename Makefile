@@ -8,26 +8,21 @@ ZIP_NAME = $(NAME)-v$(VERSION).zip
 UGLIFYJS = npx uglify-js
 JS_FILES = $(shell find . -name "*.js" -not -path "./node_modules/*" -not -path "./$(BUILD_DIR)/*" -not -path "./$(DIST_DIR)/*")
 
-# Required files and directories
-REQUIRED_FILES = \
+# Fichiers et répertoires requis
+REQUIRED_BASE_FILES = \
 	manifest.json \
-	src/background/background.js \
-	src/content/content.js \
-	src/content/content.css \
-	src/ui/popup/popup.html \
-	src/ui/popup/popup.js \
-	src/ui/popup/popup.css \
-	src/utils/crypto.js \
-	utils/storage.js \
-	src/utils/openai.js \
-	src/utils/constants.js \
-	src/utils/errors.js \
-	src/utils/security.js \
-	src/utils/ui.js \
-	src/utils/validation.js \
-	src/assets/icons/icon.png \
 	LICENSE \
 	README.md
+
+# Dossiers source à compiler
+SRC_DIRS = \
+	src/assets \
+	src/background \
+	src/content \
+	src/core \
+	src/services \
+	src/ui \
+	src/utils
 
 # Version management
 define update_version
@@ -47,14 +42,21 @@ clean:
 	@rm -rf $(BUILD_DIR) $(DIST_DIR)
 
 check:
-	@echo "🔍 Checking required files..."
-	@for file in $(REQUIRED_FILES); do \
+	@echo "🔍 Checking required base files..."
+	@for file in $(REQUIRED_BASE_FILES); do \
 		if [ ! -f $$file ]; then \
 			echo "❌ Missing required file: $$file"; \
 			exit 1; \
 		fi \
 	done
-	@echo "✅ All required files present"
+	@echo "🔍 Checking source directories..."
+	@for dir in $(SRC_DIRS); do \
+		if [ ! -d $$dir ]; then \
+			echo "❌ Missing required directory: $$dir"; \
+			exit 1; \
+		fi \
+	done
+	@echo "✅ All required files and directories present"
 	@echo "🔍 Checking module imports..."
 	@if grep -r "import.*from" . | grep -v "node_modules" | grep -v "build" | grep -v "dist" > /dev/null; then \
 		echo "✅ Module imports found and valid"; \
@@ -66,14 +68,24 @@ check:
 build:
 	@echo "🏗️  Building extension v$(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
-	@for file in $(REQUIRED_FILES); do \
-		mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
-		if [ "$(VERSION_NAME)" != *"dev"* ] && [ "$${file%.js}" != "$$file" ]; then \
-			echo "Minifying $$file..."; \
-			$(UGLIFYJS) $$file -o $(BUILD_DIR)/$$file; \
-		else \
-			cp $$file $(BUILD_DIR)/$$file; \
-		fi \
+	
+	@echo "📁 Copying base files..."
+	@for file in $(REQUIRED_BASE_FILES); do \
+		cp $$file $(BUILD_DIR)/$$file; \
+	done
+	
+	@echo "📁 Processing source files..."
+	@for dir in $(SRC_DIRS); do \
+		mkdir -p $(BUILD_DIR)/$$dir; \
+		find $$dir -type f | while read file; do \
+			mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
+			if [ "$(VERSION_NAME)" != *"dev"* ] && [ "$${file%.js}" != "$$file" ]; then \
+				echo "Minifying $$file..."; \
+				$(UGLIFYJS) $$file -o $(BUILD_DIR)/$$file; \
+			else \
+				cp $$file $(BUILD_DIR)/$$file; \
+			fi \
+		done \
 	done
 	@echo "✅ Build complete"
 
