@@ -5,7 +5,40 @@ VERSION_NAME = $(shell jq -r .version_name manifest.json)
 BUILD_DIR = build
 DIST_DIR = dist
 ZIP_NAME = $(NAME)-v$(VERSION).zip
-UGLIFYJS = npx uglify-js
+TERSER = npx terser
+OBFUSCATOR = npx javascript-obfuscator
+TERSER_OPTIONS = \
+	--compress passes=2,pure_funcs=['console.log'] \
+	--mangle toplevel,reserved=['browser','chrome'] \
+	--format quote_style=1 \
+	--ecma 2020
+
+# Créer un fichier de configuration pour javascript-obfuscator
+define OBFUSCATOR_CONFIG
+{
+	"compact": true,
+	"controlFlowFlattening": true,
+	"controlFlowFlatteningThreshold": 0.5,
+	"deadCodeInjection": true,
+	"deadCodeInjectionThreshold": 0.2,
+	"identifierNamesGenerator": "hexadecimal",
+	"renameGlobals": true,
+	"rotateStringArray": true,
+	"selfDefending": true,
+	"shuffleStringArray": true,
+	"simplify": true,
+	"splitStrings": true,
+	"splitStringsChunkLength": 5,
+	"stringArray": true,
+	"stringArrayEncoding": ["base64"],
+	"stringArrayThreshold": 0.8,
+	"stringArrayWrappersCount": 2,
+	"target": "browser"
+}
+endef
+
+export OBFUSCATOR_CONFIG
+
 JS_FILES = $(shell find . -name "*.js" -not -path "./node_modules/*" -not -path "./$(BUILD_DIR)/*" -not -path "./$(DIST_DIR)/*")
 
 # Fichiers et répertoires requis
@@ -80,8 +113,14 @@ build:
 		find $$dir -type f | while read file; do \
 			mkdir -p $(BUILD_DIR)/$$(dirname $$file); \
 			if [ "$(VERSION_NAME)" != *"dev"* ] && [ "$${file%.js}" != "$$file" ]; then \
-				echo "Minifying $$file..."; \
-				$(UGLIFYJS) $$file -o $(BUILD_DIR)/$$file; \
+				echo "Processing $$file..."; \
+				echo "$$OBFUSCATOR_CONFIG" > obfuscator.json; \
+				TEMP_DIR="$$(dirname $(BUILD_DIR)/$$file)"; \
+				mkdir -p $$TEMP_DIR; \
+				TEMP_FILE="$$TEMP_DIR/temp_$$(basename $$file)"; \
+				$(TERSER) $$file $(TERSER_OPTIONS) --output $$TEMP_FILE && \
+				$(OBFUSCATOR) $$TEMP_FILE --config obfuscator.json --output $(BUILD_DIR)/$$file && \
+				rm $$TEMP_FILE obfuscator.json; \
 			else \
 				cp $$file $(BUILD_DIR)/$$file; \
 			fi \
