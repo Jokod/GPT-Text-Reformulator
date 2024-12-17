@@ -41,6 +41,11 @@ export class UIManager {
     this.#setupButtonHandlers(buttons, input, app);
     this.#appendButtons(wrapper, buttons);
     
+    const adapter = await EditorFactory.createAdapter(input);
+    if (adapter) {
+      adapter.setupButtons(wrapper);
+    }
+
     this.#setupInputListeners(input, app);
     this.insertWrapperAfterInput(input, wrapper);
     

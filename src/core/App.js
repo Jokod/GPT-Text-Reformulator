@@ -162,15 +162,11 @@ export class App {
     const wrapper = input.nextElementSibling;
     
     if (this.state.showOnFocus && wrapper?.classList.contains('gpt-buttons-wrapper')) {
-      setTimeout(() => {
-        const activeElement = document.activeElement;
-        const isHovered = wrapper.dataset.hover === 'true';
-        
-        // Ne pas cacher si la souris est sur le wrapper ou si un bouton a le focus
-        if (!isHovered && !wrapper.contains(activeElement)) {
-          wrapper.style.display = 'none';
-        }
-      }, 100);
+      const reformulator = this.instances.reformulator;
+      // Ne pas cacher si une reformulation est en cours
+      if (!reformulator.state.isReformulating) {
+        wrapper.style.display = 'none';
+      }
     }
   }
 
