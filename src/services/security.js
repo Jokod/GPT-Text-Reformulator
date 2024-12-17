@@ -53,7 +53,7 @@ export class SecurityChecker {
     }
 
     const devToolsCheck = {
-      // V��rifier la présence de debugger
+      // Vérifier la présence de debugger
       async checkDebugger() {
         const start = performance.now();
         debugger;
