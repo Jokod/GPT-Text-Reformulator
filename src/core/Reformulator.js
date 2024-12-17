@@ -41,6 +41,8 @@ export class Reformulator {
         return;
       }
 
+      this.state.currentEditor = editor;
+
       const wrapper = editor.getButtonsWrapper();
         
       const reformulateButton = wrapper?.querySelector('.gpt-reformulate-button');
@@ -279,6 +281,10 @@ export class Reformulator {
   async reformulate(text) {
     try {
         const template = this.getTemplate();
+        const systemInstructions = this.state.currentEditor?.getSystemInstructions() || '';
+        
+        template.systemInstructions = systemInstructions;
+
         const response = await chrome.runtime.sendMessage({
             action: 'reformulateText',
             text,

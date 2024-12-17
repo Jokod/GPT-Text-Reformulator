@@ -21,6 +21,8 @@ export async function reformulateText(apiKey, text, template) {
       throw new Error(ERRORS.API_KEY.INVALID());
     }
 
+    const systemInstructions = template.system + (template.systemInstructions || '');
+
     const response = await fetch(`${API.OPENAI.BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -30,7 +32,7 @@ export async function reformulateText(apiKey, text, template) {
       body: JSON.stringify({
         model: API.OPENAI.MODEL,
         messages: [
-          { role: 'system', content: template.system },
+          { role: 'system', content: systemInstructions },
           { role: 'user', content: template.prompt + text }
         ],
         max_tokens: API.OPENAI.MAX_TOKENS,

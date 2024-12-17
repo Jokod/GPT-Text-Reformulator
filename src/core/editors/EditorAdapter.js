@@ -5,6 +5,7 @@ export class EditorAdapter {
       throw new Error('EditorAdapter is an abstract class');
     }
     this.element = element;
+    this.systemInstructions = '';
   }
 
   setupButtons(buttonsWrapper) {
@@ -130,5 +131,10 @@ export class EditorAdapter {
         element.style.opacity = condition ? '1' : '0.5';
       }
     });
+  }
+
+  // Donne des instructions suplémentaires pour la reformulation
+  getSystemInstructions() {
+    return this.systemInstructions;
   }
 } 
