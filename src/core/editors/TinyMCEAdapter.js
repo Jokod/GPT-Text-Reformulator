@@ -29,6 +29,8 @@ export class TinyMCEAdapter extends EditorAdapter {
         pointer-events: none !important;
       }
     `;
+
+    this.systemInstructions = "La balise [NEWLINE] représente un saut de ligne. À chaque occurrence d'un saut de ligne, peu importe le contexte, il est OBLIGATOIRE d'insérer explicitement la balise [NEWLINE] à cet endroit. Si la balise est déjà présente, elle doit rester intacte et être réécrite telle quelle dans le texte. Aucun saut de ligne ne doit exister sans la présence de la balise [NEWLINE].";
   }
 
   #injectStyles() {
@@ -285,8 +287,9 @@ export class TinyMCEAdapter extends EditorAdapter {
       const body = this.iframe.contentDocument.body;
       if (!body) return '';
       
-      const firstChild = body.firstElementChild || body;
-      return firstChild.innerHTML.trim();
+      return Array.from(body.children)
+        .map(child => child.innerHTML.trim())
+        .join('[NEWLINE]');
     } catch (error) {
       return '';
     }
@@ -317,14 +320,17 @@ export class TinyMCEAdapter extends EditorAdapter {
         }
       }
 
-      let firstChild = body.firstElementChild;
-      if (!firstChild) {
-        firstChild = this.iframe.contentDocument.createElement('p');
-        body.appendChild(firstChild);
-      }
+      const contentParts = cleanContent.split('[NEWLINE]');
+      
+      body.innerHTML = '';
+      
+      contentParts.forEach(part => {
+        const p = this.iframe.contentDocument.createElement('p');
+        p.innerHTML = part.trim();
+        body.appendChild(p);
+      });
 
-      firstChild.innerHTML = cleanContent;
-      this.textarea.value = cleanContent;
+      this.textarea.value = body.innerHTML;
       this.dispatchInputEvent();
     } catch (error) {
       // Silently fail
@@ -461,5 +467,9 @@ export class TinyMCEAdapter extends EditorAdapter {
 
     // Fallback
     return this.textarea.nextElementSibling?.nextElementSibling;
+  }
+
+  getSystemInstructions() {
+    return this.systemInstructions;
   }
 } 

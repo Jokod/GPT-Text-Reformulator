@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "GPT Text Reformulator",
-  "version": "1.2.1",
-  "version_name": "1.2.1",
+  "version": "1.2.2",
+  "version_name": "1.2.2",
   "description": "Reformule le texte avec ChatGPT",
   "permissions": [
     "storage",
-    "activeTab",
     "contextMenus"
   ],
   "action": {
@@ -48,5 +47,8 @@
         "<all_urls>"
       ]
     }
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ]
 }
