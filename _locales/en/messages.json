@@ -1,0 +1,194 @@
+{
+  "appName": {
+    "message": "GPT Text Reformulator",
+    "description": "Application name"
+  },
+  "appDesc": {
+    "message": "Reformulate text with ChatGPT",
+    "description": "Application description"
+  },
+  "reformulateButton": {
+    "message": "Reformulate",
+    "description": "Reformulate button text"
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Settings section title"
+  },
+  "undoButton": {
+    "message": "Previous version",
+    "description": "Button to go to previous version"
+  },
+  "redoButton": {
+    "message": "Next version",
+    "description": "Button to go to next version"
+  },
+  "rollbackButton": {
+    "message": "Original version",
+    "description": "Button to go back to original version"
+  },
+  "apiKeyLabel": {
+    "message": "OpenAI API Key",
+    "description": "Label for API key field"
+  },
+  "apiKeyPlaceholder": {
+    "message": "sk-...",
+    "description": "Placeholder for API key input"
+  },
+  "saveButton": {
+    "message": "Save",
+    "description": "Save button text"
+  },
+  "showActionsMenu": {
+    "message": "Show actions menu",
+    "description": "Show actions menu checkbox label"
+  },
+  "reformulationStyle": {
+    "message": "Reformulation style",
+    "description": "Style selection label"
+  },
+  "professionalStyle": {
+    "message": "Professional",
+    "description": "Professional style option"
+  },
+  "casualStyle": {
+    "message": "Casual",
+    "description": "Casual style option"
+  },
+  "formalStyle": {
+    "message": "Formal",
+    "description": "Formal style option"
+  },
+  "getApiKey": {
+    "message": "Get API Key",
+    "description": "Get API key link text"
+  },
+  "errorLoadingSettings": {
+    "message": "Error loading settings",
+    "description": "Error message when settings cannot be loaded"
+  },
+  "apiKeySaved": {
+    "message": "API key saved successfully",
+    "description": "Success message when API key is saved"
+  },
+  "errorUpdatingStyle": {
+    "message": "Error updating style",
+    "description": "Error message when style cannot be updated"
+  },
+  "errorChangingLanguage": {
+    "message": "Error changing language",
+    "description": "Error message when language cannot be changed"
+  },
+  "errorApiKeyNotConfigured": {
+    "message": "API key not configured. Please configure your API key in settings.",
+    "description": "Error message when API key is not configured"
+  },
+  "errorApiKeyInvalid": {
+    "message": "Invalid API key. Please check your key.",
+    "description": "Error message when API key is invalid"
+  },
+  "errorApiKeyEncryption": {
+    "message": "Error encrypting API key",
+    "description": "Error message when encrypting the key"
+  },
+  "errorApiKeyDecryption": {
+    "message": "Error decrypting API key",
+    "description": "Error message when decrypting the key"
+  },
+  "errorApiKeyFormat": {
+    "message": "Invalid API key format",
+    "description": "Error message when key format is incorrect"
+  },
+  "errorRateLimit": {
+    "message": "Rate limit reached. Please try again later.",
+    "description": "Error message for rate limiting"
+  },
+  "errorNetwork": {
+    "message": "Network error. Please check your connection.",
+    "description": "Error message for network issues"
+  },
+  "errorUnknown": {
+    "message": "An unexpected error occurred",
+    "description": "Generic error message"
+  },
+  "professionalPrompt": {
+    "message": "Reformulate this text professionally while keeping the original meaning: ",
+    "description": "Prompt for professional style"
+  },
+  "professionalSystem": {
+    "message": "You are a professional communication expert. Your task is to reformulate the text in a clear, precise and professional manner while maintaining the original message.",
+    "description": "System message for professional style"
+  },
+  "casualPrompt": {
+    "message": "Reformulate this text in a casual and natural way: ",
+    "description": "Prompt for casual style"
+  },
+  "casualSystem": {
+    "message": "You are a casual communication expert. Your task is to reformulate the text in a natural and accessible way while maintaining the original message.",
+    "description": "System message for casual style"
+  },
+  "formalPrompt": {
+    "message": "Reformulate this text in a formal and sophisticated manner: ",
+    "description": "Prompt for formal style"
+  },
+  "formalSystem": {
+    "message": "You are a formal communication expert. Your task is to reformulate the text in an elegant and sophisticated style while maintaining the original message.",
+    "description": "System message for formal style"
+  },
+  "tinyMCESystemInstructions": {
+    "message": "The [NEWLINE] tag represents a line break. For each line break occurrence, regardless of context, it is MANDATORY to explicitly insert the [NEWLINE] tag at that location. If the tag is already present, it must remain intact and be rewritten as is in the text. No line break should exist without the presence of the [NEWLINE] tag.",
+    "description": "System instructions for TinyMCE regarding line breaks"
+  },
+  "contextMenuTitle": {
+    "message": "GPT Text Reformulator",
+    "description": "Main context menu title"
+  },
+  "contextMenuReformulate": {
+    "message": "Reformulate",
+    "description": "Context menu option to reformulate"
+  },
+  "contextMenuUndo": {
+    "message": "Previous version",
+    "description": "Context menu option to go back"
+  },
+  "contextMenuRedo": {
+    "message": "Next version",
+    "description": "Context menu option to go forward"
+  },
+  "contextMenuRollback": {
+    "message": "Original version",
+    "description": "Context menu option to go back to original"
+  },
+  "errorTinyMCEInit": {
+    "message": "TinyMCE editor must be initialized with a textarea element",
+    "description": "Error message for TinyMCE initialization"
+  },
+  "errorTooManyAttempts": {
+    "message": "Too many attempts. Please wait before trying again.",
+    "description": "Error message for too many attempts"
+  },
+  "errorDevMode": {
+    "message": "Developer mode detected",
+    "description": "Error message for developer mode"
+  },
+  "errorUnsafeEnvironment": {
+    "message": "Unsafe environment detected",
+    "description": "Error message for unsafe environment"
+  },
+  "errorDevTools": {
+    "message": "Developer tools detected",
+    "description": "Error message for developer tools"
+  },
+  "errorUnauthorizedAccess": {
+    "message": "Unauthorized access",
+    "description": "Error message for unauthorized access"
+  },
+  "errorKeyIntegrity": {
+    "message": "Key integrity compromised",
+    "description": "Error message for key integrity"
+  },
+  "errorKeyUnavailable": {
+    "message": "API key is no longer available",
+    "description": "Error message for unavailable API key"
+  }
+} 

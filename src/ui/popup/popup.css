@@ -15,7 +15,7 @@ body {
 .main-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 28px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e8eaed;
@@ -28,10 +28,11 @@ body {
 }
 
 h1 {
-  font-size: 20px;
+  font-size: 18px;
   color: #1a73e8;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  margin: 0;
+  flex: 1;
 }
 
 .form-group {
@@ -446,4 +447,45 @@ input:focus {
   .loading::before {
     background: rgba(32, 33, 36, 0.8);
   }
+}
+
+.lang-switcher {
+  margin-left: auto;
+  visibility: hidden;
+  transition: visibility 0.2s;
+  position: relative;
+}
+
+.lang-switcher select {
+  padding: 1px 4px;
+  min-width: 32px;
+  text-align: center;
+  border: 1px solid #e8eaed;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.lang-switcher select option {
+  padding: 1px 4px;
+  background-color: #f8f9fa;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lang-switcher select {
+    border-color: #3c4043;
+    color: #e8eaed;
+  }
+
+  .lang-switcher select option {
+    background-color: #2d2d2d;
+    color: #e8eaed;
+  }
+}
+
+body:not(.loading) .lang-switcher {
+  visibility: visible;
 }

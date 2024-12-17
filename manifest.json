@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "GPT Text Reformulator",
-  "version": "1.2.7",
-  "version_name": "1.2.7",
-  "description": "Reformule le texte avec ChatGPT",
+  "name": "__MSG_appName__",
+  "version": "1.3.0",
+  "version_name": "1.3.0-dev",
+  "description": "__MSG_appDesc__",
   "permissions": [
     "storage",
     "contextMenus"
@@ -38,6 +38,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "_locales/*/*.json",
         "src/core/*.js",
         "src/ui/*.js",
         "src/utils/*.js",
@@ -50,5 +51,6 @@
   ],
   "host_permissions": [
     "<all_urls>"
-  ]
+  ],
+  "default_locale": "en"
 }

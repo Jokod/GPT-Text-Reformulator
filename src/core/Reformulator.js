@@ -211,8 +211,10 @@ export class Reformulator {
 
   getTemplate() {
     const style = this.dependencies.app?.selectedStyle || 'professional';
-    return this.dependencies.templates[style] || 
-           this.dependencies.templates.professional;
+    return {
+      ...this.dependencies.templates[style],
+      style: style
+    };
   }
 
   // Gestion des réponses et erreurs
